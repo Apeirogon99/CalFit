@@ -3,7 +3,7 @@ pluginManagement {
         id 'org.springframework.boot' version "${springBootVersion}"
         id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
         id 'org.asciidoctor.jvm.convert' version "${asciidoctorConvertVersion}"
-        id 'io.spring.javaformat' version "${springJavaFormatVersion}"
+        id 'com.diffplug.spotless' version "${spotlessVersion}"
     }
 }
 
@@ -12,13 +12,20 @@ rootProject.name = 'calfit'
 // Core 모듈
 include 'core:core-enum'
 include 'core:core-api'
-include 'core:domain-analytics'
+include 'core:domain-payment'
 include 'core:domain-billing'
 include 'core:domain-career'
-include 'core:domain-finance'
+include 'core:domain-report'
 include 'core:domain-user'
-include 'core:domain-vote'
 include 'core:domain-workspace'
+include 'core:domain-calendar'
+include 'core:domain-meeting-room'
+include 'core:domain-announcement-board'
+include 'core:domain-recruitment'
+include 'core:domain-interview'
+include 'core:domain-applicant'
+include 'core:domain-application'
+include 'core:domain-notification'
 
 // Storage 모듈
 include 'storage:db-core'
@@ -29,6 +36,7 @@ include 'support:monitoring'
 include 'support:security'
 include 'support:event'
 include 'support:error'
+include 'support:email'
 
 // Client 모듈
-include 'clients:client-example'
+include 'clients:google-calendar'

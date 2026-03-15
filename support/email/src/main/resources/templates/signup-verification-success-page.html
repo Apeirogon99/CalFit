@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>회원가입 완료</title>
+    <meta http-equiv="refresh" th:content="'3;url=' + ${workspaceCreateUrl}" />
+  </head>
+  <body style="margin: 0; min-height: 100vh; background: #eef2f7; font-family: 'Segoe UI', Arial, sans-serif; color: #10214d; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="display: grid; grid-template-columns: 1fr 1.2fr; max-width: 1100px; width: 100%; background: #ffffff; border-radius: 28px; overflow: hidden; box-shadow: 0 30px 80px rgba(15, 23, 42, 0.14);">
+      <section style="padding: 56px 48px; background: radial-gradient(circle at bottom, rgba(45, 212, 191, 0.28), transparent 48%), linear-gradient(160deg, #10214d 0%, #0b6b70 100%); color: #ffffff;">
+        <div style="font-size: 52px; line-height: 1.05; font-weight: 800;">Welcome<br />Aboard!</div>
+        <p style="margin-top: 28px; font-size: 24px; line-height: 1.6; opacity: 0.9;">CalFit과 함께 채용의 새로운 여정을 시작할 준비가 되셨나요?</p>
+      </section>
+      <section style="padding: 56px 64px; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
+        <div>
+          <h1 style="margin: 0; font-size: 54px; line-height: 1.15; font-weight: 800;">회원가입이 완료되었습니다!</h1>
+          <p style="margin: 20px 0 0; font-size: 24px; line-height: 1.7; color: #334155;">이제 팀을 위한 워크스페이스를 만들고 CalFit 대시보드를 시작해 보세요.</p>
+        </div>
+        <a
+          th:href="${workspaceCreateUrl}"
+          style="display: block; margin-top: 12px; padding: 24px 28px; border-radius: 20px; background: #edf6f5; border: 1px solid #bfded8; text-decoration: none; color: #0f766e; font-size: 28px; font-weight: 800;"
+          >워크스페이스 생성하기</a
+        >
+        <p style="margin: 0; color: #64748b; font-size: 18px;">3초 후 워크스페이스 생성 화면으로 자동 이동합니다.</p>
+        <a th:href="${loginUrl}" style="color: #475569; font-size: 22px; text-decoration: none;">로그인 화면으로 돌아가기</a>
+      </section>
+    </div>
+  </body>
+</html>

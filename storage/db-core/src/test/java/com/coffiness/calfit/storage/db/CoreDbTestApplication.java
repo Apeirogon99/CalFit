@@ -8,8 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication
 public class CoreDbTestApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(CoreDbTestApplication.class, args);
-    }
-
+  public static void main(String[] args) {
+    SpringApplication.run(CoreDbTestApplication.class, args);
+  }
 }

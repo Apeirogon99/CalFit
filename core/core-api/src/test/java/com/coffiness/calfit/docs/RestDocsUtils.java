@@ -5,8 +5,7 @@ import org.springframework.restdocs.operation.preprocess.Preprocessors;
 
 public class RestDocsUtils {
 
-    public static OperationResponsePreprocessor responsePreprocessor() {
-        return Preprocessors.preprocessResponse(Preprocessors.prettyPrint());
-    }
-
+  public static OperationResponsePreprocessor responsePreprocessor() {
+    return Preprocessors.preprocessResponse(Preprocessors.prettyPrint());
+  }
 }

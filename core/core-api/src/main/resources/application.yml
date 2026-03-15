@@ -1,20 +1,76 @@
 spring.application.name: core-api
 spring.profiles.active: local
 
+aws:
+  region: ap-northeast-2
+
+s3:
+  applicant-bucket: calfit-applicant   # 실제 버킷명
+  key-prefix: uploads
+  presign-expire-minutes: 10
+
 spring:
   config:
     import:
+      - optional:file:${user.dir}/.env[.properties]
+      - optional:file:${user.dir}/../.env[.properties]
+      - optional:file:${user.dir}/../../.env[.properties]
       - monitoring.yml
       - logging.yml
       - db-core.yml
-      - client-example.yml
+      - optional:google-calendar.yml
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:true}
+            required: ${SPRING_MAIL_SMTP_STARTTLS_REQUIRED:true}
+          ssl:
+            enable: ${SPRING_MAIL_SMTP_SSL_ENABLE:false}
+          connectiontimeout: ${SPRING_MAIL_SMTP_CONNECTION_TIMEOUT:5000}
+          timeout: ${SPRING_MAIL_SMTP_TIMEOUT:5000}
+          writetimeout: ${SPRING_MAIL_SMTP_WRITE_TIMEOUT:5000}
   web.resources.add-mappings: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:shedlock.sql
+
+calendar:
+  google-sync:
+    scheduler-fixed-delay-ms: 300000
+    scheduler-initial-delay-ms: 120000
+    watch-callback-url: ${CALENDAR_GOOGLE_WATCH_CALLBACK_URL:https://api.calfit.co.kr/api/v1/calendars/google/notifications}
+    watch-ttl-seconds: ${CALENDAR_GOOGLE_WATCH_TTL_SECONDS:604800}
+    watch-token-secret: ${CALENDAR_GOOGLE_WATCH_TOKEN_SECRET:calfit-google-watch-secret}
 
 # JWT 설정
 jwt:
-  secret: my-super-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
-  access-token-expiration: 3600000   # 1시간 (ms)
+  secret: ${JWT_SECRET:}
+  access-token-expiration: 3600000    # 1시간 (ms)
   refresh-token-expiration: 604800000 # 7일 (ms)
+
+# 이메일 설정
+app:
+  email:
+    enabled: ${APP_EMAIL_ENABLED:true}
+    sender: ${APP_EMAIL_SENDER:${SPRING_MAIL_USERNAME:no-reply@calfit.com}}
+    api-base-url: ${APP_EMAIL_API_BASE_URL:http://localhost:8080}
+    frontend-base-url: ${APP_EMAIL_FRONTEND_BASE_URL:http://localhost:5173}
+
+# 토스페이먼츠 설정
+toss:
+  payments:
+    client-key: ${TOSS_CLIENT_KEY:test_default}
+    secret-key: ${TOSS_SECRET_KEY:test_default}
+    api-base-url: https://api.tosspayments.com
 
 server:
   tomcat:
@@ -45,5 +101,5 @@ spring.config.activate.on-profile: prod
 
 cors:
   allowed-origins:
-    - https://YOUR_DOMAIN.com
-    - https://www.YOUR_DOMAIN.com
+    - https://calfit.co.kr
+    - https://www.calfit.co.kr

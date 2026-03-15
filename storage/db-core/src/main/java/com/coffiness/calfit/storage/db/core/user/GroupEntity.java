@@ -7,34 +7,37 @@ import jakarta.persistence.*;
 @Table(name = "user_groups")
 public class GroupEntity extends TenantBaseEntity {
 
-    // 이름
-    @Column(name = "name", nullable = false)
-    private String name;
+  // 이름
+  @Column(name = "name", nullable = false)
+  private String name;
 
-    // 설명
-    @Column(name = "description")
-    private String description;
+  // 색상
+  @Column(name = "color")
+  private String color;
 
-    protected GroupEntity() {
-        super();
-    }
+  protected GroupEntity() {
+    super();
+  }
 
-    private GroupEntity(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
+  private GroupEntity(String name, String color) {
+    this.name = name;
+    this.color = color;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public static GroupEntity create(String name, String color) {
+    return new GroupEntity(name, color);
+  }
 
-    public String getDescription() {
-        return description;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void updateInfo(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
+  public String getColor() {
+    return color;
+  }
 
+  public void updateInfo(String name, String color) {
+    this.name = name;
+    this.color = color;
+  }
 }

@@ -1,7 +1,8 @@
 package com.coffiness.calfit.core.enums;
 
 public enum MeetingRoomStatus {
-
-    RESERVED, DELETED
-
+  ACTIVE,
+  RESERVED,
+  EXPIRED,
+  DELETED
 }

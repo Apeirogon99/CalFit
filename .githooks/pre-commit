@@ -2,6 +2,6 @@
 echo "Running format..."
 
 GIT_DIR=$(git rev-parse --show-toplevel)
-$GIT_DIR/gradlew format
+$GIT_DIR/gradlew spotlessApply
 
 git add -u

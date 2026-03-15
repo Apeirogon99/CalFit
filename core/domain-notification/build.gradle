@@ -1,0 +1,17 @@
+bootJar.enabled = false
+jar.enabled = true
+
+dependencies {
+    implementation project(':core:core-enum')
+    implementation project(':core:domain-application')
+    implementation project(':core:domain-calendar')
+    implementation project(':core:domain-interview')
+    implementation project(':core:domain-meeting-room')
+    implementation project(':storage:db-core')
+    implementation project(':support:error')
+    implementation project(':support:event')
+    implementation project(':core:domain-workspace')
+    implementation project(':core:domain-announcement-board')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}

@@ -1,9 +1,13 @@
+
 .gradle
+.gradle-user-home/
 build/
 .env
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**
 !**/src/test/**
+.gradle-user/
+.gradle-user-codex/
 
 ### IDEA ###
 .idea
@@ -14,3 +18,13 @@ out/
 .claude/settings.local.json
 CLAUDE.md
 .vscode/settings.json
+
+### Credentials & Secrets ###
+*secret*.yml
+*secret*.properties
+*oauth*.yml
+*credentials*.json
+*client_secret*.json
+*service-account*.json
+application-local.yml
+/k8s/secret.yaml

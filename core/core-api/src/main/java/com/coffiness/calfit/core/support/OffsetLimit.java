@@ -5,8 +5,7 @@ import org.springframework.data.domain.Pageable;
 
 public record OffsetLimit(int offset, int limit) {
 
-    public Pageable toPageable() {
-        return PageRequest.of(offset / limit, limit);
-    }
-
+  public Pageable toPageable() {
+    return PageRequest.of(offset / limit, limit);
+  }
 }

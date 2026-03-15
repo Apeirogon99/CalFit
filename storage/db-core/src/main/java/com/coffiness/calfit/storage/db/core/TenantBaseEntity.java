@@ -7,19 +7,17 @@ import org.hibernate.annotations.TenantId;
 @MappedSuperclass
 public abstract class TenantBaseEntity extends BaseEntity {
 
-    @TenantId
-    @Column(name = "tenant_id", nullable = false, updatable = false)
-    private String tenantId;
+  @TenantId
+  @Column(name = "tenant_id", nullable = false, updatable = false)
+  private String tenantId;
 
-    protected TenantBaseEntity() {
-    }
+  protected TenantBaseEntity() {}
 
-    protected TenantBaseEntity(String tenantId) {
-        this.tenantId = tenantId;
-    }
+  protected TenantBaseEntity(String tenantId) {
+    this.tenantId = tenantId;
+  }
 
-    public String getTenantId() {
-        return tenantId;
-    }
-
+  public String getTenantId() {
+    return tenantId;
+  }
 }

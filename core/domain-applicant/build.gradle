@@ -1,0 +1,11 @@
+bootJar.enabled = false
+jar.enabled = true
+
+dependencies {
+    implementation project(':storage:db-core')
+    implementation project(':support:security')
+    implementation project(':support:error')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+}

@@ -4,8 +4,19 @@ jar.enabled = false
 dependencies {
     // 도메인 모듈
     implementation project(':core:domain-user')
-    implementation project(':core:domain-vote')
+    implementation project(':core:domain-workspace')
+    implementation project(':core:domain-applicant')
+    implementation project(':core:domain-meeting-room')
+    implementation project(':core:domain-announcement-board')
+    implementation project(':core:domain-billing')
+    implementation project(':core:domain-interview')
+    implementation project(':core:domain-payment')
     implementation project(':core:core-enum')
+    implementation project(':core:domain-calendar')
+    implementation project(':core:domain-recruitment')
+    implementation project(':core:domain-career')
+    implementation project(':core:domain-application')
+    implementation project(':core:domain-notification')
 
     // 지원 모듈
     implementation project(':support:monitoring')
@@ -13,12 +24,16 @@ dependencies {
     implementation project(':support:security')
     implementation project(':support:event')
     implementation project(':support:error')
+    implementation project(':support:email')
 
     // 스토리지
     implementation project(':storage:db-core')
 
+    // 클라이언트
+    implementation project(':clients')
+
     // 외부 클라이언트 (MSA)
-    implementation project(':clients:client-example')
+    implementation project(':clients:google-calendar')
 
     // 테스트 - REST Docs
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
@@ -28,6 +43,30 @@ dependencies {
     // Spring
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // OpenFeign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // ShedLock
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:5.16.0'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.16.0'
+
+    // AWS
+    implementation platform("software.amazon.awssdk:bom:2.42.3")
+    implementation "software.amazon.awssdk:s3"
+    implementation "software.amazon.awssdk:auth"
+}
+
+def snippetsDir = file("$buildDir/generated-snippets")
+
+tasks.named('restDocsTest') {
+    outputs.dir snippetsDir
+}
+
+tasks.named('asciidoctor') {
+    inputs.dir snippetsDir
+    attributes 'snippets': snippetsDir
 }
 
 def jacocoTargetProjects = rootProject.subprojects.findAll { subproject ->

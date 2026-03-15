@@ -7,6 +7,7 @@ dependencies {
     implementation project(':support:security')
     implementation project(':support:event')
     implementation project(':support:error')
+    implementation project(':support:email')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

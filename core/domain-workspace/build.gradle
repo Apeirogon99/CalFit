@@ -6,8 +6,10 @@ dependencies {
     implementation project(':storage:db-core')
     implementation project(':support:error')
     implementation project(':support:event')
+    implementation project(':support:email')
     implementation project(':core:domain-user')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
+

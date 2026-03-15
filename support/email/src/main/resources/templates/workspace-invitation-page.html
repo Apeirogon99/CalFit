@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>워크스페이스 초대 확인</title>
+  </head>
+  <body style="margin: 0; min-height: 100vh; background: #eef2f7; font-family: 'Segoe UI', Arial, sans-serif; color: #10214d; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="max-width: 860px; width: 100%; background: #ffffff; border-radius: 28px; box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12); overflow: hidden;">
+      <div style="padding: 40px 48px; background: linear-gradient(135deg, #10214d 0%, #2563eb 100%); color: #ffffff;">
+        <div style="font-size: 15px; letter-spacing: 0.08em; opacity: 0.82;">CalFit Invitation</div>
+        <h1 style="margin: 14px 0 0; font-size: 42px; line-height: 1.2; font-weight: 800;">워크스페이스 초대가 도착했습니다</h1>
+      </div>
+      <div style="padding: 40px 48px; font-size: 20px; line-height: 1.8; color: #334155;">
+        <p style="margin-top: 0;"><strong th:text="${invitedEmail}">user@test.com</strong> 계정이 <strong th:text="${memberTypeLabel}">면접관</strong> 역할로 초대되었습니다.</p>
+        <div style="margin: 24px 0; padding: 18px 20px; border-radius: 18px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;">
+          초대 만료 시각: <strong th:text="${expiresAtText}">2026-03-12 16:31</strong>
+        </div>
+        <p>초대받은 이메일로 먼저 회원가입을 완료했다면 바로 참여할 수 있습니다.</p>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 24px;">
+          <a th:href="${acceptUrl}" style="padding: 14px 28px; border-radius: 999px; border: 0; background: #2563eb; color: #ffffff; text-decoration: none; font-size: 18px; font-weight: 700; cursor: pointer;">워크스페이스 참여하기</a>
+          <a th:href="${loginUrl}" style="padding: 14px 28px; border-radius: 999px; border: 1px solid #cbd5e1; color: #334155; text-decoration: none; font-size: 18px; font-weight: 700;">로그인으로 이동</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

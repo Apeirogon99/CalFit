@@ -26,4 +26,4 @@ assignees: ''
 -
 
 ## 📅 예상 마감일 (Deadline)
-- YYYY-MM-DD
+- 2026-MM-DD

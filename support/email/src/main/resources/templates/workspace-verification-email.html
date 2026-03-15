@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CalFit 이메일 인증</title>
+  </head>
+  <body style="margin: 0; padding: 24px; background: #f5f7fb; font-family: 'Segoe UI', Arial, sans-serif; color: #111827;">
+    <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);">
+      <div style="padding: 32px; background: linear-gradient(135deg, #10214d 0%, #0f766e 100%); color: #ffffff;">
+        <div style="font-size: 14px; letter-spacing: 0.08em; opacity: 0.8;">CalFit</div>
+        <h1 style="margin: 12px 0 0; font-size: 28px; line-height: 1.3;">이메일 인증을 완료해 주세요</h1>
+      </div>
+      <div style="padding: 32px; line-height: 1.7;">
+        <p style="margin-top: 0;"><strong th:text="${userName}">사용자</strong>님, CalFit 회원가입을 진행해 주셔서 감사합니다.</p>
+        <p>아래 버튼을 누르면 이메일 인증이 완료되고, 워크스페이스 생성 화면으로 바로 이어집니다.</p>
+        <div style="margin: 28px 0; text-align: center;">
+          <a
+            th:href="${verificationLink}"
+            style="display: inline-block; padding: 14px 28px; border-radius: 999px; background: #16a34a; color: #ffffff; text-decoration: none; font-weight: 700;"
+            >인증하기</a
+          >
+        </div>
+        <div style="padding: 16px 18px; border-radius: 14px; background: #ecfdf5; color: #166534; font-size: 14px;">
+          인증 링크는 <strong th:text="${expiresAtText}">2026-03-09 16:31</strong>까지 유효합니다.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

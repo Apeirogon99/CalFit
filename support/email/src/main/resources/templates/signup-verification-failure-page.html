@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>이메일 인증 실패</title>
+  </head>
+  <body style="margin: 0; min-height: 100vh; background: #eef2f7; font-family: 'Segoe UI', Arial, sans-serif; color: #10214d; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="max-width: 760px; width: 100%; background: #ffffff; border-radius: 28px; box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12); overflow: hidden;">
+      <div style="padding: 40px 48px; background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); color: #ffffff;">
+        <h1 style="margin: 0; font-size: 42px; line-height: 1.2; font-weight: 800;">인증 링크를 확인할 수 없습니다</h1>
+      </div>
+      <div style="padding: 40px 48px; font-size: 20px; line-height: 1.8; color: #334155;">
+        <p style="margin-top: 0;">인증 링크가 만료되었거나 이미 사용할 수 없는 상태입니다.</p>
+        <p>다시 회원가입을 진행하거나 로그인 화면에서 새 인증 메일 발송 기능을 연결해 주세요.</p>
+        <a th:href="${loginUrl}" style="display: inline-block; margin-top: 16px; padding: 14px 28px; border-radius: 999px; background: #10214d; color: #ffffff; text-decoration: none; font-weight: 700;">로그인 화면으로 이동</a>
+      </div>
+    </div>
+  </body>
+</html>
+

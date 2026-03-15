@@ -8,12 +8,12 @@
 :sectnums:
 :docinfo: shared-head
 
-== 개요 (Introduction)
-이 문서는 Core API 명세서입니다.
+== Introduction
+Core API specification.
 
 == Users API
 
-=== 회원가입
+=== User Signup
 ==== Curl Request
 include::{snippets}/users/signup/curl-request.adoc[]
 ==== Request Fields
@@ -25,7 +25,7 @@ include::{snippets}/users/signup/response-fields.adoc[]
 
 '''
 
-=== 로그인
+=== User Login
 ==== Curl Request
 include::{snippets}/users/login/curl-request.adoc[]
 ==== Request Fields
@@ -37,7 +37,7 @@ include::{snippets}/users/login/response-fields.adoc[]
 
 '''
 
-=== 내 정보 조회
+=== Get My Info
 ==== Curl Request
 include::{snippets}/users/me/curl-request.adoc[]
 ==== Http Response
@@ -47,7 +47,7 @@ include::{snippets}/users/me/response-fields.adoc[]
 
 '''
 
-=== 회원 탈퇴
+=== Delete User
 ==== Curl Request
 include::{snippets}/users/delete/curl-request.adoc[]
 ==== Http Response
@@ -57,9 +57,35 @@ include::{snippets}/users/delete/response-fields.adoc[]
 
 '''
 
+== Applicants API
+
+=== Applicant Signup
+==== Curl Request
+include::{snippets}/applicants/signup/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/applicants/signup/request-fields.adoc[]
+==== Http Response
+include::{snippets}/applicants/signup/http-response.adoc[]
+==== Response Fields
+include::{snippets}/applicants/signup/response-fields.adoc[]
+
+'''
+
+=== Applicant Login
+==== Curl Request
+include::{snippets}/applicants/login/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/applicants/login/request-fields.adoc[]
+==== Http Response
+include::{snippets}/applicants/login/http-response.adoc[]
+==== Response Fields
+include::{snippets}/applicants/login/response-fields.adoc[]
+
+'''
+
 == Votes API
 
-=== 투표 생성
+=== Vote Create
 ==== Curl Request
 include::{snippets}/votes/curl-request.adoc[]
 ==== Request Fields

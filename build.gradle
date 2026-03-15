@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot' apply(false)
     id 'io.spring.dependency-management'
-    id 'io.spring.javaformat' apply(false)
+    id 'com.diffplug.spotless' apply(false)
     id 'org.asciidoctor.jvm.convert' apply(false)
     id 'org.sonarqube' version "${sonarqubeVersion}"
     id 'jacoco'
