@@ -5,15 +5,15 @@
 
 ## 핵심 성과
 
-> **Claude Code + TDD 기반 개발 프로세스**를 설계·도입하여 실질 개발 2.5주 만에 6개 담당 도메인 모듈 구축 + CI/CD 파이프라인 + AWS 배포까지 완료
-> 모놀리식에서 출발해 **3단계 아키텍처 진화**를 거치며 모듈 간 직접 의존을 제거하고 유지보수 가능한 구조를 확립
+> **Claude Code + TDD 기반 개발 프로세스**를 설계하고 팀에 도입했습니다. 실질 개발 2.5주 만에 6개 담당 도메인 모듈 구축, CI/CD 파이프라인, AWS 배포까지 완료했습니다.
+> 모놀리식에서 출발해 **3단계 아키텍처 진화**를 거쳤습니다. 모듈 간 직접 의존을 제거하고 변경 영향을 격리할 수 있는 구조를 만들었습니다.
 
 | 항목 | 수치 |
 |---|---|
-| 본인 기여 | 커밋 151건 · 테스트 269개 작성 (전체 434개 중 62%) |
-| 아키텍처 | 모놀리식 → 멀티모듈 → 4계층 + Facade (3단계 진화) |
-| 테스트 커버리지 | Line 52.9% · Branch 35.1% (TDD 기반 지속 확장 중) |
-| CI/CD | GitHub Actions (EC2) + Jenkins (EKS) 듀얼 파이프라인 |
+| 본인 기여 | 커밋 151건, 테스트 269개 작성 / 전체 434개 중 62% |
+| 아키텍처 | 모놀리식 → 멀티모듈 → 4계층 + Facade, 3단계 진화 |
+| 테스트 커버리지 | Line 52.9%, Branch 35.1% / TDD 기반으로 지속 확장 중 |
+| CI/CD | GitHub Actions으로 EC2 배포 + Jenkins로 EKS 배포, 두 가지 파이프라인 운영 |
 
 ---
 
@@ -35,15 +35,15 @@
 | 항목 | 내용 |
 |---|---|
 | 인원 | 백엔드 5명 |
-| 역할 | **팀 리드** — 아키텍처 설계 및 의사결정, TDD 방법론 팀 도입, 코드 리뷰 |
+| 역할 | **팀 리드** — 아키텍처 설계와 의사결정, TDD 방법론을 팀에 도입, 코드 리뷰 |
 | 기간 | 2026.01.22 ~ 03.20 (약 2개월) |
 
-**담당 도메인**: SaaS 멀티테넌시 · 요금제/결제(billing, payment) · 관리자 통계·리포트(report) · 멤버/그룹 권한(member, group) · 워크스페이스(workspace)
+**담당 도메인**: SaaS 멀티테넌시, 요금제/결제, 관리자 통계/리포트, 멤버/그룹 권한, 워크스페이스
 
 **팀 리드 기여**:
-- 멀티모듈 → 4계층 → Facade 아키텍처 진화 방향을 설계하고 팀에 공유
-- Kent Beck의 Augmented Coding 기반 TDD 프로세스를 수립하고 팀 전체에 적용
-- `@CalfitApiTest` + Fixture 패턴 등 테스트 인프라를 구축하여 팀원 5명이 동일한 방식으로 테스트 작성
+- 멀티모듈 → 4계층 → Facade로 이어지는 아키텍처 진화 방향을 설계하고 팀에 공유했습니다.
+- Kent Beck의 Augmented Coding을 참고해 TDD 프로세스를 만들고 팀 전체에 적용했습니다.
+- `@CalfitApiTest`와 Fixture 패턴 등 테스트 인프라를 만들어서 팀원 5명이 같은 방식으로 테스트를 작성할 수 있게 했습니다.
 
 ---
 
@@ -53,7 +53,7 @@
 
 #### 문제
 
-전통적인 모놀리식 구조에서는 코드가 뒤섞여 한 부분을 수정하면 다른 부분이 영향을 받았습니다. 도메인이 늘어날수록 의존성이 폭발적으로 증가했습니다.
+전통적인 모놀리식 구조에서는 코드가 뒤섞여 있었습니다. 한 부분을 수정하면 다른 부분이 영향을 받았고, 도메인이 늘어날수록 의존성도 같이 늘어났습니다.
 
 #### 방안 검토
 
@@ -65,12 +65,12 @@
 
 #### 적용
 
-MSA의 설계 원칙(모듈 경계, Public API 노출)을 지키면서도 단일 배포의 이점을 유지하는 **멀티모듈 모놀리식**을 선택했습니다.
+MSA의 설계 원칙인 모듈 경계와 Public API 노출을 지키면서도 단일 배포의 이점을 유지할 수 있는 **멀티모듈 모놀리식**을 선택했습니다.
 
 ```
 CalFit/
 ├── core/
-│   ├── core-api/        # REST Controller, Facade (오케스트레이션)
+│   ├── core-api/        # REST Controller, Facade
 │   ├── core-enum/       # 공유 Enum
 │   └── domain-*/        # 13개 도메인 모듈 (billing, payment, user, ...)
 ├── storage/
@@ -79,7 +79,7 @@ CalFit/
 └── clients/             # 외부 API 연동 (Google Calendar)
 ```
 
-각 도메인 모듈은 **명확한 경계**를 가지며, Public API(Reader 인터페이스)로만 외부에 노출합니다. 내부 서비스나 Repository를 직접 호출하면 모놀리식과 다를 게 없기 때문입니다.
+각 도메인 모듈은 **명확한 경계**를 가집니다. 외부에는 Reader 인터페이스로만 노출합니다. 내부 서비스나 Repository를 직접 호출하면 모놀리식과 다를 게 없기 때문입니다.
 
 ---
 
@@ -87,10 +87,10 @@ CalFit/
 
 #### 문제
 
-멀티모듈로 분리했지만, 두 가지 경계 침범이 발생했습니다.
+멀티모듈로 분리했지만 두 가지 문제가 생겼습니다.
 
-1. **Service가 타 도메인 Repository를 직접 import** → 모듈 경계 무의미
-2. **여러 도메인을 조합하는 로직이 Controller에 누적** → Controller 비대화, 테스트 어려움
+1. **Service가 다른 도메인의 Repository를 직접 import** → 모듈 경계가 무의미해짐
+2. **여러 도메인을 조합하는 로직이 Controller에 쌓임** → Controller가 비대해지고 테스트가 어려워짐
 
 ```java
 // ❌ BillingService가 UserRepository를 직접 참조 → 경계 침범
@@ -115,10 +115,10 @@ domain-billing/
 ├── api/v1/              # Request/Response DTO
 ├── domain/              # 비즈니스 로직 + Reader 인터페이스 정의
 │   ├── BillingService.java
-│   ├── MemberReader.java     # ← 인터페이스 (계약)
+│   ├── MemberReader.java     # ← 인터페이스
 │   └── BillingInfo.java
-└── infra/               # Reader 구현체 (Repository 접근)
-    └── MemberReaderImpl.java  # ← 구현 (db-core 의존)
+└── infra/               # Reader 구현체, Repository 접근
+    └── MemberReaderImpl.java  # ← 구현체, db-core 의존
 ```
 
 ```java
@@ -130,7 +130,7 @@ public class BillingService {
 
 #### 적용: Facade 오케스트레이션
 
-Facade가 여러 도메인 서비스를 조합하고, Controller는 라우팅만 담당합니다. 예를 들어 `ScheduleFacade`는 `MemberReader`(멤버 검증) + `MeetingRoomService`(회의실 조회) + `ScheduleService`(일정 생성)를 조합하여 하나의 유즈케이스를 완성합니다.
+Facade가 여러 도메인 서비스를 조합합니다. Controller는 라우팅만 담당합니다. 예를 들어 `ScheduleFacade`는 `MemberReader`로 멤버를 검증하고, `MeetingRoomService`로 회의실을 조회하고, `ScheduleService`로 일정을 생성합니다. 이렇게 하나의 유즈케이스를 완성합니다.
 
 #### 결과: 의존성 방향 Before / After
 
@@ -144,7 +144,7 @@ Facade가 여러 도메인 서비스를 조합하고, Controller는 라우팅만
 
 [After] Reader 인터페이스 + Facade로 단방향 의존
 ┌──────────────────────────────────────────┐
-│            core-api (Facade)             │ ← 오케스트레이션만
+│            core-api (Facade)             │ ← 도메인 조합만 담당
 ├──────────────────────────────────────────┤
 │ domain-billing │ domain-report │ domain-*│ ← Reader 인터페이스 정의
 ├──────────────────────────────────────────┤
@@ -161,7 +161,7 @@ Facade가 여러 도메인 서비스를 조합하고, Controller는 라우팅만
 
 ### 왜 AI + TDD인가
 
-Claude Code는 빠른 코드 생성이 가능하지만, 무조건 신뢰하면 버그가 누적됩니다. Kent Beck이 제안한 **Augmented Coding** — TDD 사이클(Red-Green-Refactor)로 개발자가 주도권을 유지하며 AI를 통제하는 접근을 채택했습니다.
+Claude Code는 코드를 빠르게 생성해 줍니다. 하지만 무조건 신뢰하면 버그가 쌓입니다. Kent Beck이 제안한 **Augmented Coding**을 참고했습니다. TDD 사이클인 Red-Green-Refactor를 통해 개발자가 주도권을 유지하면서 AI를 활용하는 방식입니다.
 
 ```
  ┌─────────────────────────────────────────────────────┐
@@ -185,16 +185,16 @@ Claude Code는 빠른 코드 생성이 가능하지만, 무조건 신뢰하면 �
 
 | 단계 | 수행 주체 | 내용 |
 |---|---|---|
-| **Red** | 개발자 | 테스트 3건 작성: TenantId 자동 발급 / 테넌트 간 데이터 격리 / 헤더 없는 요청 거부 |
-| **Green** | Claude Code | TenantContext(ThreadLocal) + TenantInterceptor + BaseEntity tenantId 필드 생성 |
-| **피드백** | 테스트 실행 | 2건 실패 — 예외 타입 불일치 + TenantContext.clear() 누락 → AI에 피드백 후 재생성 |
+| **Red** | 개발자 | 테스트 3건 작성: TenantId 자동 발급, 테넌트 간 데이터 격리, 헤더 없는 요청 거부 |
+| **Green** | Claude Code | TenantContext를 ThreadLocal로 구현하고, TenantInterceptor와 BaseEntity tenantId 필드를 생성 |
+| **피드백** | 테스트 실행 | 2건 실패. 예외 타입이 맞지 않았고 TenantContext.clear()가 빠져 있었습니다. AI에 피드백 후 다시 생성 |
 | **Refactor** | 개발자 | 테스트 전체 통과 확인 → 코드 구조 정리 → PR |
 
 이 패턴을 담당 도메인 전체에 반복 적용했습니다.
 
 ### 테스트 인프라 설계
 
-TDD를 팀 전체에 적용하려면 **"테스트 작성이 쉬워야"** 합니다. 이를 위해 테스트 인프라를 먼저 구축했습니다.
+TDD를 팀 전체에 적용하려면 **"테스트 작성이 쉬워야"** 합니다. 그래서 테스트 인프라를 먼저 만들었습니다.
 
 ```java
 // 모든 통합 테스트의 설정을 한 줄로 통일
@@ -219,9 +219,9 @@ class POST_specs {  // HTTP 메서드 기반 네이밍 컨벤션
 
 | 테스트 인프라 요소 | 역할 |
 |---|---|
-| `@CalfitApiTest` | `@SpringBootTest` + Fixture 자동 주입 + 랜덤 포트를 메타 어노테이션으로 통일 |
-| `BaseFixture` | GET/POST/PUT/DELETE HTTP 클라이언트를 래핑, 모든 Fixture의 기반 |
-| `{Domain}Fixture` | 도메인별 테스트 시나리오 캡슐화 (UserFixture, MemberFixture, BillingFixture 등) |
+| `@CalfitApiTest` | `@SpringBootTest`, Fixture 자동 주입, 랜덤 포트를 메타 어노테이션 하나로 통일 |
+| `BaseFixture` | GET/POST/PUT/DELETE HTTP 클라이언트를 래핑한 모든 Fixture의 기반 클래스 |
+| `{Domain}Fixture` | 도메인별 테스트 시나리오를 캡슐화. UserFixture, MemberFixture, BillingFixture 등 |
 | `{HTTP_METHOD}_specs.java` | API 엔드포인트별 테스트 파일 네이밍 컨벤션 |
 | REST Docs 연동 | 통합 테스트 기반으로 Mock 데이터를 주입하여 API 문서 자동 생성 |
 | 멀티테넌트 격리 | `TenantContext` 기반 테넌트 간 데이터 격리를 모든 테스트에서 검증 |
@@ -231,12 +231,12 @@ class POST_specs {  // HTTP 메서드 기반 네이밍 컨벤션
 
 | 항목 | 효과 |
 |---|---|
-| **속도** | 테스트 작성 → AI 구현 생성 반복으로 담당 6개 도메인 모듈 완성 |
-| **안정성** | AI가 생성한 코드도 반드시 테스트를 통과해야 머지 — 검증 없는 코드 차단 |
-| **유지보수** | 테스트가 곧 명세서 — 6개월 후에도 의도를 파악 가능 |
-| **팀 기여** | 테스트 인프라 구축으로 팀원 전체가 동일한 TDD 프로세스를 따를 수 있게 함 |
+| **속도** | 테스트 작성 → AI 구현 생성을 반복해서 담당 6개 도메인 모듈을 완성했습니다 |
+| **안정성** | AI가 생성한 코드도 테스트를 통과해야 머지할 수 있습니다. 검증 안 된 코드는 들어갈 수 없습니다 |
+| **유지보수** | 테스트가 곧 명세서입니다. 6개월 후에도 의도를 파악할 수 있습니다 |
+| **팀 기여** | 테스트 인프라를 만들어서 팀원 전체가 같은 TDD 프로세스를 따를 수 있게 했습니다 |
 
-핵심 인사이트: Claude Code는 **"코드를 대신 짜주는 도구"가 아니라 "TDD Green 단계를 가속하는 도구"**로 활용했습니다. 개발자가 Red(테스트)와 Refactor(설계 판단)를 주도하고, AI는 구현 생성만 담당하기 때문에 속도와 품질을 동시에 확보할 수 있었습니다.
+핵심은 이것입니다. Claude Code를 **"코드를 대신 짜주는 도구"가 아니라 "TDD Green 단계를 빠르게 해주는 도구"**로 활용했습니다. 개발자가 Red 단계에서 테스트를 작성하고, Refactor 단계에서 설계를 판단합니다. AI는 구현 생성만 담당합니다. 이렇게 역할을 나누니 속도와 품질을 둘 다 잡을 수 있었습니다.
 
 ---
 
@@ -244,7 +244,7 @@ class POST_specs {  // HTTP 메서드 기반 네이밍 컨벤션
 
 ### 듀얼 파이프라인 설계
 
-EC2 + GitHub Actions로 빠른 배포 환경을 구축한 뒤, **컨테이너 오케스트레이션 경험을 위해** EKS + Jenkins 파이프라인을 추가 구축했습니다. 현재 서비스는 모듈러 모놀리식이고 트래픽 규모도 크지 않아 EKS가 필수는 아니지만, 두 방식을 직접 비교하며 **각 배포 전략의 장단점과 적합한 상황**을 체득하는 것이 목적이었습니다.
+먼저 EC2 + GitHub Actions로 빠른 배포 환경을 만들었습니다. 그 다음 **컨테이너 오케스트레이션을 경험하기 위해** EKS + Jenkins 파이프라인을 추가로 만들었습니다. 현재 서비스는 모듈러 모놀리식이고 트래픽도 크지 않아서 EKS가 꼭 필요하지는 않습니다. 하지만 두 방식을 직접 비교하면서 **각 배포 전략이 어떤 상황에 맞는지** 배우는 것이 목적이었습니다.
 
 | 항목 | EC2 배포 | EKS 배포 |
 |---|---|---|
@@ -308,9 +308,9 @@ EC2 + GitHub Actions로 빠른 배포 환경을 구축한 뒤, **컨테이너 �
 
 | AWS 서비스 | 용도 |
 |---|---|
-| S3 + CloudFront | FE 정적 파일 호스팅 + CDN |
-| EC2 | BE 서버 (docker-compose) / Jenkins 서버 |
-| EKS | Kubernetes 클러스터 (t3.medium × 2) |
+| S3 + CloudFront | FE 정적 파일 호스팅과 CDN |
+| EC2 | BE 서버로 docker-compose 실행, Jenkins 서버 |
+| EKS | Kubernetes 클러스터, t3.medium 2대 |
 | ECR | Docker 이미지 레지스트리 |
 | ALB | EKS Ingress 로드밸런서 |
-| EBS | MySQL 데이터 영구 저장 (PersistentVolume) |
+| EBS | MySQL 데이터 영구 저장, PersistentVolume으로 사용 |
