@@ -62,4 +62,12 @@ public interface MemberReader {
   long countActiveMembers(String workspaceId);
 
   List<Member> getMembersByUserIds(String workspaceId, List<Long> userIds);
+
+  /**
+   * 워크스페이스의 활성 HR 멤버 수 조회
+   *
+   * @param workspaceId 워크스페이스 ID
+   * @return 활성 HR 멤버 수
+   */
+  long countActiveHrMembers(String workspaceId);
 }

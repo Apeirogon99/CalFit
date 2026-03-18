@@ -30,6 +30,7 @@ public class GoogleCalendarClient implements GoogleCalendarPort {
   private static final String WORKSPACE_MARKER_PREFIX = "calfit_workspace_id=";
 
   private final GoogleCalendarApi googleCalendarApi;
+  private final ZoneId appZoneId;
   private final ConcurrentMap<String, ReentrantLock> workspaceLocks = new ConcurrentHashMap<>();
 
   // 캘린더에 하나의 일정 추가
@@ -58,9 +59,7 @@ public class GoogleCalendarClient implements GoogleCalendarPort {
 
       GoogleCalendarCreateRequestDto requestDto =
           new GoogleCalendarCreateRequestDto(
-              buildWorkspaceCalendarName(workspaceName),
-              workspaceMarker,
-              ZoneId.systemDefault().getId());
+              buildWorkspaceCalendarName(workspaceName), workspaceMarker, appZoneId.getId());
 
       GoogleCalendarCreateResponseDto responseDto =
           googleCalendarApi.createCalendar(bearerToken, requestDto);

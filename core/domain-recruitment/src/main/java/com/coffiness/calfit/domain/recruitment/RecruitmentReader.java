@@ -1,6 +1,7 @@
 package com.coffiness.calfit.domain.recruitment;
 
 import com.coffiness.calfit.core.enums.RecruitmentStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,12 @@ public interface RecruitmentReader {
   RecruitmentDetailInfo readDetail(Long recruitmentId);
 
   Recruitment readById(Long recruitmentId);
+
+  // 자동 게시 대상 채용 공고 조회
+  List<Recruitment> readScheduledToOpen(LocalDateTime currentTime);
+
+  // 자동 마감 대상 채용 공고 조회
+  List<Recruitment> readScheduledToClose(LocalDateTime currentTime);
 
   Map<String, Long> countOpenRecruitmentsByTenant();
 

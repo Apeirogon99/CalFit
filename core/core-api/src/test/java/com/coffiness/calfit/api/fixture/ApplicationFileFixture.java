@@ -27,14 +27,41 @@ public record ApplicationFileFixture(TestRestTemplate client, ObjectMapper objec
 
   public ResponseEntity<PresignUploadResponse> presignUpload(
       String token, PresignUploadRequest request) {
+    return presignUpload(token, null, request);
+  }
+
+  public ResponseEntity<PresignUploadResponse> presignUpload(
+      String token, String tenantId, PresignUploadRequest request) {
     String url = "/api/v1/application-files/presign-upload";
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     if (token != null && !token.isBlank()) {
       headers.setBearerAuth(token);
     }
+    if (tenantId != null && !tenantId.isBlank()) {
+      headers.set("X-Tenant-ID", tenantId);
+    }
     HttpEntity<PresignUploadRequest> entity = new HttpEntity<>(request, headers);
     return client.postForEntity(url, entity, PresignUploadResponse.class);
+  }
+
+  public ResponseEntity<String> presignUploadRaw(String token, PresignUploadRequest request) {
+    return presignUploadRaw(token, null, request);
+  }
+
+  public ResponseEntity<String> presignUploadRaw(
+      String token, String tenantId, PresignUploadRequest request) {
+    String url = "/api/v1/application-files/presign-upload";
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    if (token != null && !token.isBlank()) {
+      headers.setBearerAuth(token);
+    }
+    if (tenantId != null && !tenantId.isBlank()) {
+      headers.set("X-Tenant-ID", tenantId);
+    }
+    HttpEntity<PresignUploadRequest> entity = new HttpEntity<>(request, headers);
+    return client.postForEntity(url, entity, String.class);
   }
 
   public ResponseEntity<String> presignUploadWithoutToken(PresignUploadRequest request) {

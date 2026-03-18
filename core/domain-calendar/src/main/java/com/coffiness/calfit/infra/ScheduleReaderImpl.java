@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -138,47 +137,66 @@ public class ScheduleReaderImpl implements ScheduleReader {
   }
 
   @Override
-  public List<Long> readAttendeeIds(Long scheduleId) {
-    return scheduleAttendeeRepository.findByScheduleId(scheduleId).stream()
-        .map(ScheduleAttendeeEntity::getAttendeeId)
+  public List<Schedule> findByReservationIds(List<Long> reservationIds) {
+    // 예약 ID 목록 기준 일정 일괄 조회
+    List<Long> targetReservationIds = normalizeIds(reservationIds);
+    if (targetReservationIds.isEmpty()) {
+      return List.of();
+    }
+
+    return scheduleRepository
+        .findAllByReservationIdInAndStatus(targetReservationIds, EntityStatus.ACTIVE)
+        .stream()
+        .map(this::toDomain)
         .toList();
   }
 
   @Override
+  public List<Long> readAttendeeIds(Long scheduleId) {
+    return readAttendeeIdsByScheduleIds(List.of(scheduleId)).getOrDefault(scheduleId, List.of());
+  }
+
+  @Override
+  public Map<Long, List<Long>> readAttendeeIdsByScheduleIds(List<Long> scheduleIds) {
+    // 일정 ID 목록 기준 참석자 일괄 조회
+    List<Long> targetScheduleIds = normalizeIds(scheduleIds);
+    if (targetScheduleIds.isEmpty()) {
+      return Map.of();
+    }
+
+    return scheduleAttendeeRepository.findAllByScheduleIdIn(targetScheduleIds).stream()
+        .collect(
+            Collectors.groupingBy(
+                ScheduleAttendeeEntity::getScheduleId,
+                LinkedHashMap::new,
+                Collectors.mapping(
+                    ScheduleAttendeeEntity::getAttendeeId,
+                    Collectors.collectingAndThen(Collectors.toList(), List::copyOf))));
+  }
+
+  @Override
   public ScheduleDetailInfo readDetail(Long scheduleId) {
-    Schedule schedule = read(scheduleId);
-    List<Long> attendeeIds = readAttendeeIds(scheduleId);
-    String applicantName = null;
+    ScheduleDetailInfo detailInfo = readDetails(List.of(scheduleId)).get(scheduleId);
+    if (detailInfo == null) {
+      throw new IllegalArgumentException("일정을 찾을 수 없습니다.");
+    }
+    return detailInfo;
+  }
 
-    if (schedule.interviewScheduleId() != null) {
-      attendeeIds = readInterviewAttendeeIds(schedule);
-      applicantName = readInterviewApplicantName(schedule.interviewScheduleId());
+  @Override
+  public Map<Long, ScheduleDetailInfo> readDetails(List<Long> scheduleIds) {
+    // 일정 상세 정보 일괄 조회
+    List<Long> targetScheduleIds = normalizeIds(scheduleIds);
+    if (targetScheduleIds.isEmpty()) {
+      return Map.of();
     }
 
-    String location = "지정한 장소 없음";
-    if (schedule.roomId() != null) {
-      location =
-          meetingRoomRepository
-              .findById(schedule.roomId())
-              .map(MeetingRoomEntity::getName)
-              .orElse("알 수 없는 장소");
-    }
-
-    List<Long> userIdsForLookup =
-        Stream.concat(Stream.of(schedule.userId()), attendeeIds.stream()).distinct().toList();
-    Map<Long, UserInfo> userMap =
-        userReader.getUsers(userIdsForLookup).stream()
-            .collect(Collectors.toMap(UserInfo::id, Function.identity(), (left, right) -> left));
-
-    List<String> attendees =
-        attendeeIds.stream()
-            .map(attendeeId -> resolveUserName(userMap.get(attendeeId), attendeeId))
+    List<Schedule> schedules =
+        scheduleRepository.findAllByIdInAndStatus(targetScheduleIds, EntityStatus.ACTIVE).stream()
+            .map(this::toDomain)
             .toList();
 
-    String ownerName = resolveUserName(userMap.get(schedule.userId()), schedule.userId());
-
-    return ScheduleDetailInfo.of(
-        schedule, location, ownerName, attendeeIds, attendees, applicantName);
+    return buildScheduleDetailMap(schedules);
   }
 
   // 선택한 참석자들의 바쁜 일정 현황을 조회
@@ -201,20 +219,37 @@ public class ScheduleReaderImpl implements ScheduleReader {
       return ScheduleAvailability.empty();
     }
 
+    Set<Long> targetAttendeeIdSet = new LinkedHashSet<>(targetAttendeeIds);
     List<ScheduleEntity> busySchedules =
         scheduleRepository.findBusyOverlappingSchedulesByUserIds(
             targetAttendeeIds, startDate, endDate, EntityStatus.ACTIVE);
 
     List<Long> scheduleIds = busySchedules.stream().map(ScheduleEntity::getId).toList();
-    Map<Long, List<Long>> attendeeIdsByScheduleId =
-        scheduleIds.isEmpty()
-            ? Map.of()
-            : scheduleAttendeeRepository.findAllByScheduleIdIn(scheduleIds).stream()
-                .collect(
-                    Collectors.groupingBy(
-                        ScheduleAttendeeEntity::getScheduleId,
-                        Collectors.mapping(
-                            ScheduleAttendeeEntity::getAttendeeId, Collectors.toList())));
+    Map<Long, List<Long>> attendeeIdsByScheduleId = readAttendeeIdsByScheduleIds(scheduleIds);
+    Map<Long, List<ScheduleAvailability.BusySchedule>> busySchedulesByAttendeeId =
+        new LinkedHashMap<>();
+
+    targetAttendeeIds.forEach(
+        attendeeId -> busySchedulesByAttendeeId.put(attendeeId, new ArrayList<>()));
+
+    busySchedules.stream()
+        .sorted(Comparator.comparing(ScheduleEntity::getStartTime))
+        .forEach(
+            schedule -> {
+              ScheduleAvailability.BusySchedule busySchedule = toBusySchedule(schedule);
+              LinkedHashSet<Long> visibleAttendeeIds = new LinkedHashSet<>();
+
+              if (targetAttendeeIdSet.contains(schedule.getUserId())) {
+                visibleAttendeeIds.add(schedule.getUserId());
+              }
+
+              attendeeIdsByScheduleId.getOrDefault(schedule.getId(), List.of()).stream()
+                  .filter(targetAttendeeIdSet::contains)
+                  .forEach(visibleAttendeeIds::add);
+
+              visibleAttendeeIds.forEach(
+                  attendeeId -> busySchedulesByAttendeeId.get(attendeeId).add(busySchedule));
+            });
 
     Map<Long, UserInfo> userMap =
         userReader.getUsers(targetAttendeeIds).stream()
@@ -227,26 +262,7 @@ public class ScheduleReaderImpl implements ScheduleReader {
                     new ScheduleAvailability.AttendeeAvailability(
                         attendeeId,
                         resolveUserName(userMap.get(attendeeId), attendeeId),
-                        busySchedules.stream()
-                            .filter(
-                                schedule ->
-                                    isScheduleVisibleToAttendee(
-                                        attendeeId,
-                                        schedule,
-                                        attendeeIdsByScheduleId.getOrDefault(
-                                            schedule.getId(), List.of())))
-                            .sorted(Comparator.comparing(ScheduleEntity::getStartTime))
-                            .map(
-                                schedule ->
-                                    new ScheduleAvailability.BusySchedule(
-                                        schedule.getId(),
-                                        schedule.getTitle(),
-                                        schedule.getStartTime(),
-                                        schedule.getEndTime(),
-                                        schedule.isAllDay(),
-                                        schedule.getType(),
-                                        schedule.getInterviewScheduleId()))
-                            .toList()))
+                        List.copyOf(busySchedulesByAttendeeId.getOrDefault(attendeeId, List.of()))))
             .toList();
 
     return new ScheduleAvailability(attendeeAvailabilities);
@@ -269,41 +285,159 @@ public class ScheduleReaderImpl implements ScheduleReader {
         entity.getInterviewScheduleId());
   }
 
-  // 면접 연동 일정이면 함께 참여하는 다른 면접관 ID를 조회
-  private List<Long> readInterviewAttendeeIds(Schedule schedule) {
-    String tenantId = TenantContext.getTenantId();
-    if (tenantId == null || tenantId.isBlank() || schedule.interviewScheduleId() == null) {
-      return List.of();
+  private Map<Long, ScheduleDetailInfo> buildScheduleDetailMap(List<Schedule> schedules) {
+    // 일정 상세 조립용 연관 데이터 일괄 조회
+    if (schedules == null || schedules.isEmpty()) {
+      return Map.of();
     }
 
-    return interviewScheduleInterviewerRepository
-        .findAllByTenantIdAndInterviewScheduleIdIn(
-            tenantId, List.of(schedule.interviewScheduleId()))
-        .stream()
-        .map(InterviewScheduleInterviewerEntity::getUserId)
-        .filter(userId -> userId != null && !userId.equals(schedule.userId()))
-        .distinct()
-        .toList();
+    List<Long> scheduleIds =
+        schedules.stream().map(Schedule::id).filter(Objects::nonNull).distinct().toList();
+    Map<Long, List<Long>> attendeeIdsByScheduleId = readAttendeeIdsByScheduleIds(scheduleIds);
+    Map<Long, List<Long>> interviewAttendeeIdsByScheduleId =
+        readInterviewAttendeeIdsByScheduleId(schedules);
+    Map<Long, String> applicantNamesByInterviewScheduleId =
+        readInterviewApplicantNamesByInterviewScheduleIds(
+            schedules.stream()
+                .map(Schedule::interviewScheduleId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
+
+    List<Long> roomIds =
+        schedules.stream().map(Schedule::roomId).filter(Objects::nonNull).distinct().toList();
+    Map<Long, String> locationMap = readLocationsByRoomIds(roomIds);
+
+    // 소유자와 참석자 이름 표시에 필요한 사용자 조회
+    LinkedHashSet<Long> userIdsForLookup = new LinkedHashSet<>();
+    schedules.stream()
+        .map(Schedule::userId)
+        .filter(Objects::nonNull)
+        .forEach(userIdsForLookup::add);
+    attendeeIdsByScheduleId.values().forEach(userIdsForLookup::addAll);
+    interviewAttendeeIdsByScheduleId.values().forEach(userIdsForLookup::addAll);
+
+    Map<Long, UserInfo> userMap =
+        userReader.getUsers(List.copyOf(userIdsForLookup)).stream()
+            .collect(Collectors.toMap(UserInfo::id, Function.identity(), (left, right) -> left));
+
+    Map<Long, ScheduleDetailInfo> detailMap = new LinkedHashMap<>();
+    for (Schedule schedule : schedules) {
+      List<Long> attendeeIds =
+          schedule.interviewScheduleId() != null
+              ? interviewAttendeeIdsByScheduleId.getOrDefault(schedule.id(), List.of())
+              : attendeeIdsByScheduleId.getOrDefault(schedule.id(), List.of());
+
+      List<String> attendees =
+          attendeeIds.stream()
+              .map(attendeeId -> resolveUserName(userMap.get(attendeeId), attendeeId))
+              .toList();
+
+      String ownerName = resolveUserName(userMap.get(schedule.userId()), schedule.userId());
+      String location =
+          schedule.roomId() == null
+              ? "지정한 장소 없음"
+              : locationMap.getOrDefault(schedule.roomId(), "알 수 없는 장소");
+      String applicantName =
+          schedule.interviewScheduleId() == null
+              ? null
+              : applicantNamesByInterviewScheduleId.get(schedule.interviewScheduleId());
+
+      detailMap.put(
+          schedule.id(),
+          ScheduleDetailInfo.of(
+              schedule, location, ownerName, attendeeIds, attendees, applicantName));
+    }
+
+    return detailMap;
   }
 
-  // 면접 연동 일정이면 지원자 이름을 조회
-  private String readInterviewApplicantName(Long interviewScheduleId) {
+  private Map<Long, List<Long>> readInterviewAttendeeIdsByScheduleId(List<Schedule> schedules) {
+    // 면접 일정 기준 면접관 참석자 조회
     String tenantId = TenantContext.getTenantId();
-    if (tenantId == null || tenantId.isBlank() || interviewScheduleId == null) {
-      return null;
+    if (tenantId == null || tenantId.isBlank() || schedules == null || schedules.isEmpty()) {
+      return Map.of();
     }
 
-    List<Long> applicantIds =
-        interviewScheduleApplicantRepository
-            .findAllByTenantIdAndInterviewScheduleIdIn(tenantId, List.of(interviewScheduleId))
+    List<Long> interviewScheduleIds =
+        schedules.stream()
+            .map(Schedule::interviewScheduleId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+    if (interviewScheduleIds.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<Long, List<Long>> interviewerIdsByInterviewScheduleId =
+        interviewScheduleInterviewerRepository
+            .findAllByTenantIdAndInterviewScheduleIdIn(tenantId, interviewScheduleIds)
             .stream()
-            .map(InterviewScheduleApplicantEntity::getApplicantId)
+            .filter(entity -> entity.getInterviewScheduleId() != null && entity.getUserId() != null)
+            .collect(
+                Collectors.groupingBy(
+                    InterviewScheduleInterviewerEntity::getInterviewScheduleId,
+                    LinkedHashMap::new,
+                    Collectors.mapping(
+                        InterviewScheduleInterviewerEntity::getUserId,
+                        Collectors.collectingAndThen(Collectors.toList(), List::copyOf))));
+
+    Map<Long, List<Long>> attendeeIdsByScheduleId = new LinkedHashMap<>();
+    for (Schedule schedule : schedules) {
+      if (schedule.interviewScheduleId() == null) {
+        continue;
+      }
+
+      List<Long> attendeeIds =
+          interviewerIdsByInterviewScheduleId
+              .getOrDefault(schedule.interviewScheduleId(), List.of())
+              .stream()
+              .filter(userId -> !userId.equals(schedule.userId()))
+              .distinct()
+              .toList();
+      attendeeIdsByScheduleId.put(schedule.id(), attendeeIds);
+    }
+
+    return attendeeIdsByScheduleId;
+  }
+
+  private Map<Long, String> readInterviewApplicantNamesByInterviewScheduleIds(
+      List<Long> interviewScheduleIds) {
+    // 면접 일정 기준 지원자 이름 조회
+    String tenantId = TenantContext.getTenantId();
+    if (tenantId == null || tenantId.isBlank()) {
+      return Map.of();
+    }
+
+    List<Long> targetInterviewScheduleIds = normalizeIds(interviewScheduleIds);
+    if (targetInterviewScheduleIds.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<Long, List<Long>> applicantIdsByInterviewScheduleId =
+        interviewScheduleApplicantRepository
+            .findAllByTenantIdAndInterviewScheduleIdIn(tenantId, targetInterviewScheduleIds)
+            .stream()
+            .filter(
+                entity ->
+                    entity.getInterviewScheduleId() != null && entity.getApplicantId() != null)
+            .collect(
+                Collectors.groupingBy(
+                    InterviewScheduleApplicantEntity::getInterviewScheduleId,
+                    LinkedHashMap::new,
+                    Collectors.mapping(
+                        InterviewScheduleApplicantEntity::getApplicantId,
+                        Collectors.collectingAndThen(Collectors.toList(), List::copyOf))));
+
+    List<Long> applicantIds =
+        applicantIdsByInterviewScheduleId.values().stream()
+            .flatMap(Collection::stream)
             .filter(Objects::nonNull)
             .distinct()
             .toList();
 
     if (applicantIds.isEmpty()) {
-      return null;
+      return Map.of();
     }
 
     Map<Long, String> applicantNameMap =
@@ -316,15 +450,38 @@ public class ScheduleReaderImpl implements ScheduleReader {
                     (left, right) -> left,
                     LinkedHashMap::new));
 
-    return applicantIds.stream()
-        .map(applicantId -> applicantNameMap.getOrDefault(applicantId, "지원자#" + applicantId))
-        .collect(Collectors.joining(", "));
+    Map<Long, String> applicantNamesByInterviewScheduleId = new LinkedHashMap<>();
+    for (Long interviewScheduleId : targetInterviewScheduleIds) {
+      String applicantNames =
+          applicantIdsByInterviewScheduleId.getOrDefault(interviewScheduleId, List.of()).stream()
+              .map(applicantId -> applicantNameMap.getOrDefault(applicantId, "지원자#" + applicantId))
+              .collect(Collectors.joining(", "));
+
+      if (!applicantNames.isBlank()) {
+        applicantNamesByInterviewScheduleId.put(interviewScheduleId, applicantNames);
+      }
+    }
+
+    return applicantNamesByInterviewScheduleId;
   }
 
-  // 참석자에게 해당 일정이 실제로 보이는지 확인
-  private boolean isScheduleVisibleToAttendee(
-      Long attendeeId, ScheduleEntity schedule, List<Long> attendeeIds) {
-    return Objects.equals(schedule.getUserId(), attendeeId) || attendeeIds.contains(attendeeId);
+  private List<Long> normalizeIds(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return List.of();
+    }
+
+    return ids.stream().filter(Objects::nonNull).filter(id -> id > 0).distinct().toList();
+  }
+
+  private ScheduleAvailability.BusySchedule toBusySchedule(ScheduleEntity schedule) {
+    return new ScheduleAvailability.BusySchedule(
+        schedule.getId(),
+        schedule.getTitle(),
+        schedule.getStartTime(),
+        schedule.getEndTime(),
+        schedule.isAllDay(),
+        schedule.getType(),
+        schedule.getInterviewScheduleId());
   }
 
   // 참석자 이름을 응답용 문자열로 변환

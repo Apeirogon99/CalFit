@@ -27,33 +27,46 @@ public class EmailService {
   private static final DateTimeFormatter DATE_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
   private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-  private static final String SIGNUP_VERIFICATION_SUBJECT =
-      "[CalFit] \uC774\uBA54\uC77C \uC778\uC99D\uC744 \uC644\uB8CC\uD574 \uC8FC\uC138\uC694";
+  private static final String SIGNUP_VERIFICATION_SUBJECT = "[CalFit] 이메일 인증을 완료해 주세요";
 
   private final ObjectProvider<JavaMailSender> mailSenderProvider;
   private final TemplateEngine templateEngine;
   private final EmailProperties emailProperties;
+  private final EmailConfigurationValidator emailConfigurationValidator;
   private final MailProperties springMailProperties;
 
   private void sendHtmlEmail(String from, String to, String subject, String htmlContent) {
+    sendEmail(from, to, subject, htmlContent, false);
+  }
+
+  private void sendHtmlEmailOrThrow(String from, String to, String subject, String htmlContent) {
+    sendEmail(from, to, subject, htmlContent, true);
+  }
+
+  private void sendEmail(
+      String from, String to, String subject, String htmlContent, boolean throwOnFailure) {
     if (!emailProperties.isEnabled()) {
-      log.info("Email sending is disabled. to={}", to);
+      log.info("이메일 발송이 비활성화되어 있습니다. to={}", to);
       return;
     }
 
-    JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-    if (mailSender == null) {
-      throw new IllegalStateException(
-          "JavaMailSender is not configured. Check SPRING_MAIL_HOST and related settings.");
-    }
-
-    String effectiveFrom = resolveFromAddress(from);
-    if (!StringUtils.hasText(effectiveFrom)) {
-      throw new IllegalStateException(
-          "Sender address is empty. Configure APP_EMAIL_SENDER or SPRING_MAIL_USERNAME.");
-    }
+    String effectiveFrom = normalize(from);
 
     try {
+      emailConfigurationValidator.validateOrThrow();
+
+      JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+      if (mailSender == null) {
+        throw new IllegalStateException(
+            "JavaMailSender가 설정되어 있지 않습니다. SPRING_MAIL_HOST 등 메일 설정을 확인해 주세요.");
+      }
+
+      effectiveFrom = resolveFromAddress(from);
+      if (!StringUtils.hasText(effectiveFrom)) {
+        throw new IllegalStateException(
+            "발신자 주소가 비어 있습니다. APP_EMAIL_SENDER 또는 SPRING_MAIL_USERNAME을 설정해 주세요.");
+      }
+
       MimeMessage mimeMessage = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
       helper.setFrom(effectiveFrom);
@@ -64,9 +77,17 @@ public class EmailService {
       helper.setSubject(subject);
       helper.setText(htmlContent, true);
       mailSender.send(mimeMessage);
-      log.info("Email delivered. from={} to={} subject={}", effectiveFrom, to, subject);
-    } catch (MessagingException | MailException e) {
-      log.error("Failed to deliver email. from={} to={} subject={}", effectiveFrom, to, subject, e);
+      log.info("이메일 발송에 성공했습니다. from={} to={} subject={}", effectiveFrom, to, subject);
+    } catch (MessagingException e) {
+      log.error("이메일 발송에 실패했습니다. from={} to={} subject={}", effectiveFrom, to, subject, e);
+      if (throwOnFailure) {
+        throw new IllegalStateException("이메일 메시지를 생성하지 못했습니다.", e);
+      }
+    } catch (MailException | IllegalStateException e) {
+      log.error("이메일 발송에 실패했습니다. from={} to={} subject={}", effectiveFrom, to, subject, e);
+      if (throwOnFailure) {
+        throw e;
+      }
     }
   }
 
@@ -84,7 +105,7 @@ public class EmailService {
     if (isStrictSmtpProvider(springMailProperties.getHost())
         && !normalizedRequestedFrom.equalsIgnoreCase(smtpUsername)) {
       log.warn(
-          "Override sender to SMTP username for provider compatibility. requestedFrom={}, smtpUsername={}",
+          "SMTP 제공자 호환성을 위해 발신자 주소를 SMTP 사용자명으로 대체합니다. requestedFrom={}, smtpUsername={}",
           normalizedRequestedFrom,
           smtpUsername);
       return smtpUsername;
@@ -108,7 +129,7 @@ public class EmailService {
     return value.trim();
   }
 
-  @Async
+  @Async("emailTaskExecutor")
   public void sendApplicantResultEmail(String from, ApplicantEmailMessage message) {
     Context context = new Context();
     context.setVariable("applicantName", message.getApplicantName());
@@ -124,7 +145,6 @@ public class EmailService {
     sendHtmlEmail(from, message.getApplicantEmail(), message.getSubject(), htmlContent);
   }
 
-  @Async
   public void sendInterviewScheduleEmail(String from, InterviewScheduleEmailMessage message) {
     Context context = new Context();
     context.setVariable("applicantName", message.getApplicantName());
@@ -133,10 +153,10 @@ public class EmailService {
     context.setVariable("location", message.getLocation());
 
     String htmlContent = templateEngine.process("interview-schedule-email", context);
-    sendHtmlEmail(from, message.getApplicantEmail(), message.getSubject(), htmlContent);
+    sendHtmlEmailOrThrow(from, message.getApplicantEmail(), message.getSubject(), htmlContent);
   }
 
-  @Async
+  @Async("emailTaskExecutor")
   public void sendWorkspaceVerificationEmail(
       String from, WorkspaceVerificationEmailMessage message) {
     Context context = new Context();
@@ -150,7 +170,7 @@ public class EmailService {
     sendHtmlEmail(from, message.getUserEmail(), SIGNUP_VERIFICATION_SUBJECT, htmlContent);
   }
 
-  @Async
+  @Async("emailTaskExecutor")
   public void sendInvitationEmail(String from, InvitationEmailMessage message) {
     Context context = new Context();
     context.setVariable("workspaceName", message.getWorkspaceName());

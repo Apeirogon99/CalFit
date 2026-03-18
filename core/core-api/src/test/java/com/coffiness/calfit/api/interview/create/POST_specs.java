@@ -76,13 +76,12 @@ class POST_specs {
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
 
-    InterviewerContext interviewer =
-        inviteInterviewer(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
+    면접관정보 interviewer = 면접관을_초대한다(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
 
     Long meetingRoomId = meetingRoomFixture.create(hrToken, tenantId, "면접실 A", 3, 6).getData().id();
 
-    RecruitmentContext recruitment =
-        createRecruitment(
+    채용공고정보 recruitment =
+        채용공고를_생성한다(
             recruitmentFixture,
             groupRepository,
             applicationTemplateRepository,
@@ -126,13 +125,12 @@ class POST_specs {
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
 
-    InterviewerContext interviewer =
-        inviteInterviewer(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
+    면접관정보 interviewer = 면접관을_초대한다(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
 
     Long meetingRoomId = meetingRoomFixture.create(hrToken, tenantId, "면접실 A", 3, 6).getData().id();
 
-    RecruitmentContext recruitment =
-        createRecruitment(
+    채용공고정보 recruitment =
+        채용공고를_생성한다(
             recruitmentFixture,
             groupRepository,
             applicationTemplateRepository,
@@ -212,13 +210,12 @@ class POST_specs {
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
 
-    InterviewerContext interviewer =
-        inviteInterviewer(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
+    면접관정보 interviewer = 면접관을_초대한다(memberFixture, userFixture, hrToken, tenantId, "면접관 테스트");
 
     Long meetingRoomId = meetingRoomFixture.create(hrToken, tenantId, "면접실 A", 3, 6).getData().id();
 
-    RecruitmentContext recruitment =
-        createRecruitment(
+    채용공고정보 recruitment =
+        채용공고를_생성한다(
             recruitmentFixture,
             groupRepository,
             applicationTemplateRepository,
@@ -286,13 +283,12 @@ class POST_specs {
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
 
-    InterviewerContext interviewer =
-        inviteInterviewer(memberFixture, userFixture, hrToken, tenantId, "숨겨져야 할 면접관");
+    면접관정보 interviewer = 면접관을_초대한다(memberFixture, userFixture, hrToken, tenantId, "숨겨져야 할 면접관");
 
     Long meetingRoomId = meetingRoomFixture.create(hrToken, tenantId, "면접실 B", 3, 6).getData().id();
 
-    RecruitmentContext recruitment =
-        createRecruitment(
+    채용공고정보 recruitment =
+        채용공고를_생성한다(
             recruitmentFixture,
             groupRepository,
             applicationTemplateRepository,
@@ -344,7 +340,7 @@ class POST_specs {
   }
 
   // 테스트용 면접관 사용자를 생성하고 워크스페이스에 초대
-  private InterviewerContext inviteInterviewer(
+  private 면접관정보 면접관을_초대한다(
       MemberFixture memberFixture,
       UserFixture userFixture,
       String hrToken,
@@ -359,11 +355,11 @@ class POST_specs {
         memberFixture.createInvitation(hrToken, tenantId, email, MemberType.INTERVIEWER);
     memberFixture.acceptInvitation(invitationResponse.getData().token(), token);
 
-    return new InterviewerContext(userId, token);
+    return new 면접관정보(userId, token);
   }
 
   // 테스트용 채용 공고와 면접 단계를 생성
-  private RecruitmentContext createRecruitment(
+  private 채용공고정보 채용공고를_생성한다(
       RecruitmentFixture recruitmentFixture,
       GroupRepository groupRepository,
       ApplicationTemplateRepository applicationTemplateRepository,
@@ -408,8 +404,7 @@ class POST_specs {
             .findFirst()
             .orElseThrow();
 
-    return new RecruitmentContext(
-        recruitment.id(), recruitment.stages().get(0).id(), applicationTemplateId);
+    return new 채용공고정보(recruitment.id(), recruitment.stages().get(0).id(), applicationTemplateId);
   }
 
   // 현재 tenant에서 사용할 채용 담당 그룹 ID를 조회
@@ -438,7 +433,7 @@ class POST_specs {
     }
   }
 
-  private record InterviewerContext(Long userId, String token) {}
+  private record 면접관정보(Long userId, String token) {}
 
-  private record RecruitmentContext(Long recruitmentId, Long stageId, Long applicationTemplateId) {}
+  private record 채용공고정보(Long recruitmentId, Long stageId, Long applicationTemplateId) {}
 }

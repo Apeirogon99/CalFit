@@ -28,7 +28,7 @@ public record RecruitmentFixture(BaseFixture base) {
     ApiResponse<RecruitmentListResponse[]> response =
         base.get("/api/v1/recruitments", token, RecruitmentListResponse[].class);
 
-    return ApiResponse.success(List.of(response.getData()));
+    return convertArrayResponse(response);
   }
 
   public ApiResponse<RecruitmentDetailResponse> getRecruitmentDetail(
@@ -67,7 +67,7 @@ public record RecruitmentFixture(BaseFixture base) {
             tenantId,
             RecruitmentListResponse[].class);
 
-    return ApiResponse.success(List.of(response.getData()));
+    return convertArrayResponse(response);
   }
 
   public ApiResponse<RecruitmentDetailResponse> getRecruitmentDetail(
@@ -87,7 +87,7 @@ public record RecruitmentFixture(BaseFixture base) {
         exchangeWithTenant(
             url, HttpMethod.GET, null, token, tenantId, InterviewScheduleResponse[].class);
 
-    return ApiResponse.success(List.of(response.getData()));
+    return convertArrayResponse(response);
   }
 
   // 이번 주 면접 일정 조회 API를 tenant 헤더와 함께 호출
@@ -98,7 +98,7 @@ public record RecruitmentFixture(BaseFixture base) {
         exchangeWithTenant(
             url, HttpMethod.GET, null, token, tenantId, WeeklyInterviewScheduleResponse[].class);
 
-    return ApiResponse.success(List.of(response.getData()));
+    return convertArrayResponse(response);
   }
 
   public ApiResponse<RecruitmentDetailResponse> updateRecruitment(
@@ -162,5 +162,16 @@ public record RecruitmentFixture(BaseFixture base) {
     if (responseType == Void.class) return (ApiResponse<T>) response;
     T converted = base.objectMapper().convertValue(response.getData(), responseType);
     return ApiResponse.success(converted);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> ApiResponse<List<T>> convertArrayResponse(ApiResponse<T[]> response) {
+    if (response == null) {
+      return null;
+    }
+    if (response.getResult() == ResultType.ERROR || response.getData() == null) {
+      return (ApiResponse<List<T>>) (ApiResponse<?>) response;
+    }
+    return ApiResponse.success(List.of(response.getData()));
   }
 }

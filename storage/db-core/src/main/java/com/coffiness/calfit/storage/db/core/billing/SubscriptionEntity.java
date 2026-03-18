@@ -49,7 +49,7 @@ public class SubscriptionEntity extends BaseEntity {
 
   public static SubscriptionEntity createTrial(String workspaceId) {
     return new SubscriptionEntity(
-        workspaceId, PlanType.STARTER, SubscriptionStatus.TRIAL, 0L, LocalDate.now());
+        workspaceId, PlanType.BUSINESS, SubscriptionStatus.TRIAL, 0L, LocalDate.now());
   }
 
   public String getWorkspaceId() {

@@ -6,6 +6,7 @@ import com.coffiness.calfit.api.CalfitApiTest;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture.WorkspaceContext;
 import com.coffiness.calfit.api.v1.request.UpdateMemberRequest;
+import com.coffiness.calfit.api.v1.response.GroupResponse;
 import com.coffiness.calfit.api.v1.response.MemberResponse;
 import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
@@ -54,12 +55,25 @@ public class PATCH_specs {
 
   @Test
   void 존재하지_않는_groupId_지정_시_에러를_반환한다(@Autowired MemberFixture fixture) {
-    // TODO: Group 도메인 구현 후 작성
+    // assignGroup은 groupId 존재 여부를 검증하지 않고 그대로 저장함 — 검증 로직 추가 후 구현
   }
 
   @Test
   void 권한_없는_사용자가_요청하면_403_Forbidden을_반환한다(@Autowired MemberFixture fixture) {
-    // TODO: 멤버 역할 기반 권한 체크 로직 구현 후 작성
+    // Arrange: HR이 아닌 INTERVIEWER 멤버 추가
+    WorkspaceContext ctx = fixture.setupWorkspace();
+    MemberFixture.MemberContext nonHr = fixture.addSecondMemberWithToken(ctx);
+
+    // Act: INTERVIEWER가 멤버 수정 시도
+    ApiResponse<Void> response =
+        fixture.updateMember(
+            nonHr.memberId(),
+            new UpdateMemberRequest(MemberType.HR),
+            nonHr.token(),
+            ctx.workspaceId());
+
+    // Assert
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
@@ -107,7 +121,25 @@ public class PATCH_specs {
 
   @Test
   void groupId만_변경해도_정상_처리된다(@Autowired MemberFixture fixture) {
-    // TODO: Group 도메인 구현 후 작성
+    // Arrange
+    WorkspaceContext ctx = fixture.setupWorkspace();
+    Long secondMemberId = fixture.addSecondMember(ctx);
+    GroupResponse group =
+        fixture.createGroup("개발팀", "#3B82F6", ctx.hrToken(), ctx.workspaceId()).getData();
+
+    // Act: 그룹 배정
+    ApiResponse<Void> response =
+        fixture.assignGroup(secondMemberId, group.id(), ctx.hrToken(), ctx.workspaceId());
+
+    // Assert
+    assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
+
+    // Assert: 실제 그룹이 변경됐는지 확인
+    ApiResponse<MemberResponse[]> members = fixture.getMembers(ctx.hrToken(), ctx.workspaceId());
+    boolean updated =
+        java.util.Arrays.stream(members.getData())
+            .anyMatch(m -> m.id().equals(secondMemberId) && group.id().equals(m.groupId()));
+    assertThat(updated).isTrue();
   }
 
   @Test

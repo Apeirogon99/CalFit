@@ -111,6 +111,35 @@ public interface RecruitmentRepository extends JpaRepository<RecruitmentEntity, 
 
   Optional<RecruitmentEntity> findByIdAndStatus(Long id, EntityStatus status);
 
+  // 자동 게시 대상 채용 공고 조회
+  @Query(
+      """
+      SELECT r
+      FROM RecruitmentEntity r
+      WHERE r.status = :entityStatus
+        AND r.recruitmentStatus = :fromStatus
+        AND r.startDate <= :currentTime
+        AND r.endDate > :currentTime
+      """)
+  List<RecruitmentEntity> findScheduledToOpen(
+      @Param("currentTime") LocalDateTime currentTime,
+      @Param("entityStatus") EntityStatus entityStatus,
+      @Param("fromStatus") RecruitmentStatus fromStatus);
+
+  // 자동 마감 대상 채용 공고 조회
+  @Query(
+      """
+      SELECT r
+      FROM RecruitmentEntity r
+      WHERE r.status = :entityStatus
+        AND r.recruitmentStatus IN :fromStatuses
+        AND r.endDate <= :currentTime
+      """)
+  List<RecruitmentEntity> findScheduledToClose(
+      @Param("currentTime") LocalDateTime currentTime,
+      @Param("entityStatus") EntityStatus entityStatus,
+      @Param("fromStatuses") List<RecruitmentStatus> fromStatuses);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       """

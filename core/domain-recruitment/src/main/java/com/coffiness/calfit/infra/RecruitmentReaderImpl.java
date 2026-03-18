@@ -317,6 +317,34 @@ public class RecruitmentReaderImpl implements RecruitmentReader {
             .findByIdAndStatus(recruitmentId, EntityStatus.ACTIVE)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채용 공고입니다."));
 
+    return toRecruitment(entity);
+  }
+
+  @Override
+  public List<Recruitment> readScheduledToOpen(LocalDateTime currentTime) {
+    return recruitmentRepository
+        .findScheduledToOpen(currentTime, EntityStatus.ACTIVE, RecruitmentStatus.DRAFT)
+        .stream()
+        .map(this::toRecruitment)
+        .toList();
+  }
+
+  @Override
+  public List<Recruitment> readScheduledToClose(LocalDateTime currentTime) {
+    return recruitmentRepository
+        .findScheduledToClose(
+            currentTime,
+            EntityStatus.ACTIVE,
+            List.of(RecruitmentStatus.DRAFT, RecruitmentStatus.OPEN))
+        .stream()
+        .map(this::toRecruitment)
+        .toList();
+  }
+
+  // 채용 공고 엔티티 도메인 변환
+  private Recruitment toRecruitment(RecruitmentEntity entity) {
+    Long recruitmentId = entity.getId();
+
     List<RecruitmentStage> stages =
         recruitmentStageRepository.findByRecruitmentId(recruitmentId).stream()
             .map(
@@ -338,7 +366,7 @@ public class RecruitmentReaderImpl implements RecruitmentReader {
             .toList();
 
     return new Recruitment(
-        entity.getId(),
+        recruitmentId,
         entity.getCreatorId(),
         entity.getTitle(),
         entity.getContents(),

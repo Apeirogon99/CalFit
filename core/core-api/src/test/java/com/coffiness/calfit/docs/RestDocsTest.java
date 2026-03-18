@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
@@ -61,7 +63,10 @@ public abstract class RestDocsTest {
                     .withScheme("https")
                     .withHost("api.calfit.com")
                     .withPort(443))
-            .setMessageConverters(converter)
+            .setMessageConverters(
+                new ByteArrayHttpMessageConverter(),
+                new StringHttpMessageConverter(StandardCharsets.UTF_8),
+                converter)
             .setContentNegotiationManager(contentNegotiationManager)
             .addFilters(characterEncodingFilter);
 

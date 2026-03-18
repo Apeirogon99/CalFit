@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
 import com.coffiness.calfit.api.fixture.MeetingRoomFixture;
-import com.coffiness.calfit.api.fixture.UserFixture;
+import com.coffiness.calfit.api.fixture.MemberFixture;
+import com.coffiness.calfit.api.v1.request.UpdateMemberRequest;
 import com.coffiness.calfit.api.v1.response.MeetingRoomResponse;
+import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import java.util.List;
@@ -21,165 +23,171 @@ public class PUT_specs {
 
   @Test
   void 올바른_요청_시_200_OK를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "회의실 B", 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "회의실 B", 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
   }
 
   @Test
   void 토큰을_제공하지_않으면_401_Unauthorized를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(null, meetingRoomId, "회의실 B", 18, 10);
+        meetingRoomFixture.update(null, context.workspaceId(), meetingRoomId, "회의실 B", 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
-  void 다른_사용자라도_수정이_가능하다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String tokenA = userFixture.createUserAndGetToken();
-    String tokenB = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, tokenA, "회의실 A", 1, 5);
+  void 인터뷰어는_회의실을_수정할_수_없다(
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
+    Long memberId =
+        memberFixture.getMyMember(context.hrToken(), context.workspaceId()).getData().id();
+    memberFixture.updateMember(
+        memberId,
+        new UpdateMemberRequest(MemberType.INTERVIEWER),
+        context.hrToken(),
+        context.workspaceId());
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(tokenB, meetingRoomId, "회의실 B", 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "회의실 B", 18, 10);
 
-    // Assert
-    assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void 존재하지_않는_meetingRoomId이면_404_Not_Found를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, 99999L, "회의실 B", 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), 99999L, "회의실 B", 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void name_속성이_없으면_400_Bad_Request를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, null, 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, null, 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void name_속성이_2자_미만이면_400_Bad_Request를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "A", 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "A", 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
-  void name_속성이_50자_초과이면_400_Bad_Request를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+  void name_속성이_20자_초과이면_400_Bad_Request를_반환한다(
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "a".repeat(51), 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "a".repeat(21), 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void capacity_속성이_없으면_400_Bad_Request를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "회의실 B", 18, null);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "회의실 B", 18, null);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
-  void capacity_속성이_1_미만이면_400_Bad_Request를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+  void capacity_속성이_2_미만이면_400_Bad_Request를_반환한다(
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "회의실 B", 18, 0);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "회의실 B", 18, 1);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void 같은_워크스페이스_내_동일한_회의실_이름이면_409_Conflict를_반환한다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    // Arrange
-    String token = userFixture.createUserAndGetToken();
-    createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 B", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    createMeetingRoomAndGetId(
+        meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 B", 1, 5);
 
-    // Act
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.update(token, meetingRoomId, "회의실 A", 18, 10);
+        meetingRoomFixture.update(
+            context.hrToken(), context.workspaceId(), meetingRoomId, "회의실 A", 18, 10);
 
-    // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
   void 설명과_시설_색상도_수정할_수_있다(
-      @Autowired UserFixture userFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
-    String token = userFixture.createUserAndGetToken();
-    long meetingRoomId = createMeetingRoomAndGetId(meetingRoomFixture, token, "회의실 A", 1, 5);
+      @Autowired MemberFixture memberFixture, @Autowired MeetingRoomFixture meetingRoomFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    long meetingRoomId =
+        createMeetingRoomAndGetId(
+            meetingRoomFixture, context.hrToken(), context.workspaceId(), "회의실 A", 1, 5);
 
     ApiResponse<MeetingRoomResponse> response =
         meetingRoomFixture.update(
-            token,
-            null,
+            context.hrToken(),
+            context.workspaceId(),
             meetingRoomId,
             "회의실 B",
             18,
@@ -199,11 +207,12 @@ public class PUT_specs {
   private long createMeetingRoomAndGetId(
       MeetingRoomFixture meetingRoomFixture,
       String token,
+      String tenantId,
       String name,
       Integer location,
       Integer capacity) {
     ApiResponse<MeetingRoomResponse> response =
-        meetingRoomFixture.create(token, name, location, capacity);
+        meetingRoomFixture.create(token, tenantId, name, location, capacity);
     return response.getData().id();
   }
 }

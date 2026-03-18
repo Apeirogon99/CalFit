@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
 import com.coffiness.calfit.api.fixture.*;
+import com.coffiness.calfit.api.v1.request.ApplicationCreateRequest;
 import com.coffiness.calfit.api.v1.request.RecruitmentCreateRequest;
 import com.coffiness.calfit.api.v1.request.RecruitmentStageRequest;
 import com.coffiness.calfit.api.v1.response.*;
@@ -141,16 +142,18 @@ public class GET_specs {
   @Test
   void 면접_자동생성_일정은_인터뷰_식별자를_포함해_조회한다(
       @Autowired UserFixture userFixture,
-      @Autowired WorkspaceFixture workspaceFixture,
       @Autowired MemberFixture memberFixture,
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture,
+      @Autowired ApplicantFixture applicantFixture,
+      @Autowired ApplicationFixture applicationFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired MeetingRoomFixture meetingRoomFixture,
       @Autowired InterviewFixture interviewFixture,
       @Autowired CalendarFixture calendarFixture) {
 
-    String hrToken = userFixture.createUserAndGetToken();
-    WorkspaceResponse workspace = workspaceFixture.createWorkspace(hrToken).getData();
-    String tenantId = workspace.workspaceId();
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String hrToken = context.hrToken();
+    String tenantId = context.workspaceId();
 
     String interviewerEmail = userFixture.randomEmail();
     String interviewerPassword = userFixture.randomPassword();
@@ -166,25 +169,73 @@ public class GET_specs {
         memberFixture.createInvitation(hrToken, tenantId, interviewerEmail, MemberType.INTERVIEWER);
     memberFixture.acceptInvitation(invitationResponse.getData().token(), interviewerToken);
 
+    Long leadGroupId =
+        memberFixture.createGroup("캘린더 연동 담당 조직", "#14B8A6", hrToken, tenantId).getData().id();
+    Long applicationTemplateId =
+        applicationTemplateFixture.createUsedTemplateId(hrToken, tenantId, "캘린더 연동 템플릿");
+
+    LocalDateTime openedAt =
+        LocalDateTime.now().minusDays(1).withHour(9).withMinute(0).withSecond(0).withNano(0);
+
     RecruitmentCreateRequest recruitmentRequest =
         new RecruitmentCreateRequest(
             "캘린더 연동 테스트 공고",
             1,
-            1L,
+            applicationTemplateId,
             "테스트 공고",
-            LocalDateTime.of(2030, 3, 1, 9, 0),
+            openedAt,
             LocalDateTime.of(2030, 3, 31, 18, 0),
             CareerType.NEW,
             null,
             null,
-            1L,
-            List.of(1L, 2L),
+            leadGroupId,
+            List.of(),
             List.of(interviewerUserId),
             List.of(new RecruitmentStageRequest("실무 면접", RecruitmentStageType.INTERVIEW, 1)));
-    recruitmentFixture.createRecruitment(hrToken, tenantId, recruitmentRequest);
+    ApiResponse<Void> createRecruitmentResponse =
+        recruitmentFixture.createRecruitment(hrToken, tenantId, recruitmentRequest);
+    assertThat(createRecruitmentResponse.getResult()).isEqualTo(ResultType.SUCCESS);
 
     RecruitmentListResponse recruitment =
-        recruitmentFixture.getRecruitmentList(hrToken, tenantId).getData().get(0);
+        recruitmentFixture.getRecruitmentList(hrToken, tenantId).getData().stream()
+            .filter(item -> "캘린더 연동 테스트 공고".equals(item.title()))
+            .findFirst()
+            .orElseThrow();
+    Long stageId =
+        recruitment.stages().stream()
+            .filter(stage -> "실무 면접".equals(stage.stageName()))
+            .findFirst()
+            .orElseThrow()
+            .id();
+
+    String applicantEmail =
+        "app-" + java.util.UUID.randomUUID().toString().substring(0, 8) + "@t.com";
+    String applicantPassword = applicantFixture.randomPassword();
+    String applicantName = applicantFixture.randomName();
+    Long applicantId =
+        applicantFixture
+            .signUp(tenantId, applicantEmail, applicantPassword, applicantName)
+            .getData()
+            .id();
+    String applicantToken =
+        applicantFixture.login(tenantId, applicantEmail, applicantPassword).getData().accessToken();
+
+    ApplicationCreateRequest applicationRequest =
+        new ApplicationCreateRequest(
+            null,
+            recruitment.id(),
+            stageId,
+            applicationTemplateId,
+            applicantName,
+            Gender.MALE,
+            LocalDate.of(1995, 1, 1),
+            "01012345678",
+            applicantEmail,
+            com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode());
+    ApiResponse<Void> createApplicationResponse =
+        applicationFixture.createApplication(applicantToken, applicationRequest);
+    assertThat(createApplicationResponse.getResult()).isEqualTo(ResultType.SUCCESS);
+
     Long meetingRoomId = meetingRoomFixture.create(hrToken, tenantId, "면접실 A", 3, 6).getData().id();
 
     ApiResponse<InterviewResponse> createInterviewResponse =
@@ -192,10 +243,10 @@ public class GET_specs {
             hrToken,
             tenantId,
             recruitment.id(),
-            recruitment.stages().get(0).id(),
+            stageId,
             InterviewRound.FIRST,
             List.of(interviewerUserId),
-            List.of(301L),
+            List.of(applicantId),
             meetingRoomId,
             LocalDateTime.of(2030, 3, 13, 14, 0),
             60,

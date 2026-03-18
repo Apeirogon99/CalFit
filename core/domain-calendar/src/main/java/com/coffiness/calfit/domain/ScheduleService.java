@@ -221,8 +221,12 @@ public class ScheduleService {
 
   public void deleteSchedulesByReservationId(Long reservationId) {
     List<Schedule> schedules = scheduleReader.findByReservationId(reservationId);
+    // 예약에 연결된 일정 참석자 일괄 조회
+    Map<Long, List<Long>> attendeeIdsByScheduleId =
+        scheduleReader.readAttendeeIdsByScheduleIds(schedules.stream().map(Schedule::id).toList());
+
     for (Schedule schedule : schedules) {
-      List<Long> attendeeIds = scheduleReader.readAttendeeIds(schedule.id());
+      List<Long> attendeeIds = attendeeIdsByScheduleId.getOrDefault(schedule.id(), List.of());
       String googleEventId = schedule.googleEventId();
       scheduleStore.delete(schedule);
       publishScheduleAttendeeNotification(schedule, attendeeIds, false);

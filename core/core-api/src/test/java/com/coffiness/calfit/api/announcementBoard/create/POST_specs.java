@@ -6,6 +6,7 @@ import com.coffiness.calfit.api.CalfitApiTest;
 import com.coffiness.calfit.api.fixture.AnnouncementBoardFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.v1.request.UpdateMemberRequest;
+import com.coffiness.calfit.api.v1.response.AnnouncementBoardListResponse;
 import com.coffiness.calfit.api.v1.response.AnnouncementBoardResponse;
 import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
@@ -13,10 +14,8 @@ import com.coffiness.calfit.core.support.response.ResultType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 
 @CalfitApiTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @DisplayName("POST /api/v1/announcement-boards")
 class POST_specs {
 
@@ -69,6 +68,62 @@ class POST_specs {
         announcementBoardFixture.create(token, tenantId, null, "공지 내용", false);
 
     // Assert
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 제목이_한글자면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.create(token, tenantId, "공", "공지 내용", false);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 제목이_100자를_초과하면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.create(token, tenantId, "가".repeat(101), "공지 내용", false);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 내용이_없으면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.create(token, tenantId, "공지 제목", null, false);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 내용이_2000자를_초과하면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.create(token, tenantId, "공지 제목", "a".repeat(2001), false);
+
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
@@ -128,5 +183,25 @@ class POST_specs {
     assertThat(secondResponse.getData()).isNotNull();
     assertThat(secondResponse.getData().id()).isNotEqualTo(firstResponse.getData().id());
     assertThat(secondResponse.getData().title()).isEqualTo(title);
+  }
+
+  @Test
+  void 다른_워크스페이스에는_공지사항이_생성되지_않는다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext firstContext = memberFixture.setupWorkspace();
+    MemberFixture.WorkspaceContext secondContext = memberFixture.setupWorkspace();
+
+    ApiResponse<AnnouncementBoardResponse> createResponse =
+        announcementBoardFixture.create(
+            firstContext.hrToken(), firstContext.workspaceId(), "워크스페이스 A 공지", "내용", true);
+    ApiResponse<AnnouncementBoardListResponse[]> secondListResponse =
+        announcementBoardFixture.list(secondContext.hrToken(), secondContext.workspaceId());
+
+    assertThat(createResponse.getResult()).isEqualTo(ResultType.SUCCESS);
+    assertThat(secondListResponse.getResult()).isEqualTo(ResultType.SUCCESS);
+    assertThat(secondListResponse.getData())
+        .extracting(AnnouncementBoardListResponse::title)
+        .doesNotContain("워크스페이스 A 공지");
   }
 }

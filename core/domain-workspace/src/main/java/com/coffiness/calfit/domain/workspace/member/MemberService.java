@@ -47,6 +47,24 @@ public class MemberService {
   }
 
   @Transactional
+  public void leaveWorkspace(Long userId) {
+    String workspaceId = TenantContext.getTenantId();
+    Member member = memberReader.getMember(workspaceId, userId);
+
+    if (member.memberType() == MemberType.HR) {
+      long hrCount = memberReader.countActiveHrMembers(workspaceId);
+      if (hrCount <= 1) {
+        throw new CoreException(
+            ErrorType.VALIDATION_ERROR,
+            "LAST_HR_CANNOT_LEAVE",
+            "워크스페이스에 최소 1명의 인사담당자가 있어야 합니다. 다른 멤버에게 인사담당자 권한을 부여한 후 탈퇴해주세요.");
+      }
+    }
+
+    memberStore.remove(member.id());
+  }
+
+  @Transactional
   public void assignGroup(Long memberId, Long groupId) {
     memberStore.assignGroup(memberId, groupId);
   }
@@ -54,6 +72,15 @@ public class MemberService {
   @Transactional
   public void leaveGroup(Long memberId) {
     memberStore.assignGroup(memberId, null);
+  }
+
+  @Transactional(readOnly = true)
+  public void validateHrRole(Long userId) {
+    String workspaceId = TenantContext.getTenantId();
+    Member member = memberReader.getMember(workspaceId, userId);
+    if (member.memberType() != MemberType.HR) {
+      throw new CoreException(ErrorType.FORBIDDEN);
+    }
   }
 
   @Transactional(readOnly = true)

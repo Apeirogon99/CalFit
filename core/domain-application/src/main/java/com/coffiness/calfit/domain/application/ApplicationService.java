@@ -2,6 +2,7 @@ package com.coffiness.calfit.domain.application;
 
 import com.coffiness.calfit.api.v1.request.ApplicationCreateRequest;
 import com.coffiness.calfit.api.v1.request.ApplicationStageUpdateRequest;
+import com.coffiness.calfit.api.v1.response.ApplicationAnswerResponse;
 import com.coffiness.calfit.api.v1.response.ApplicationDetailResponse;
 import com.coffiness.calfit.api.v1.response.ApplicationFileResponse;
 import com.coffiness.calfit.api.v1.response.ApplicationSummaryResponse;
@@ -10,7 +11,6 @@ import com.coffiness.calfit.core.enums.AutomationTriggerType;
 import com.coffiness.calfit.core.enums.EntityStatus;
 import com.coffiness.calfit.core.enums.RecruitmentStatus;
 import com.coffiness.calfit.core.enums.UploadStatus;
-import com.coffiness.calfit.domain.application.event.ApplicationProcessChangedEvent;
 import com.coffiness.calfit.storage.db.core.application.ApplicationEntity;
 import com.coffiness.calfit.storage.db.core.application.ApplicationFileEntity;
 import com.coffiness.calfit.storage.db.core.application.ApplicationFileRepository;
@@ -26,15 +26,22 @@ import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentEntity;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentRepository;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentStageEntity;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentStageRepository;
+import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
 import com.coffiness.calfit.support.error.CoreException;
 import com.coffiness.calfit.support.error.ErrorType;
-import com.coffiness.calfit.support.event.DomainEventPublisher;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -45,11 +52,12 @@ public class ApplicationService {
   private final ApplicationFileRepository applicationFileRepository;
   private final RecruitmentRepository recruitmentRepository;
   private final RecruitmentStageRepository recruitmentStageRepository;
+  private final ApplicationTemplateRepository applicationTemplateRepository;
   private final ApplicationProcessHistoryRepository applicationProcessHistoryRepository;
   private final AutomationRuleRepository automationRuleRepository;
   private final AutomationEventRepository automationEventRepository;
   private final AutomationEventExecutor automationEventExecutor;
-  private final DomainEventPublisher domainEventPublisher;
+  private final ObjectMapper objectMapper;
 
   @Transactional
   public Long create(ApplicationCreateRequest request, Long requesterUserId) {
@@ -151,7 +159,218 @@ public class ApplicationService {
             entity.getId(), EntityStatus.ACTIVE, UploadStatus.ACTIVE);
     List<ApplicationFileResponse> fileResponses =
         files.stream().map(ApplicationFileResponse::from).collect(Collectors.toList());
-    return ApplicationDetailResponse.from(entity, fileResponses);
+    String shortBio = extractShortBio(entity.getFormFields());
+    List<ApplicationAnswerResponse> answers =
+        extractAnswerResponses(entity.getTemplateId(), entity.getFormFields());
+    return ApplicationDetailResponse.from(entity, shortBio, answers, fileResponses);
+  }
+
+  // 지원서 자기소개 추출
+  private String extractShortBio(String rawFormFields) {
+    JsonNode formFieldsNode = readJsonNode(rawFormFields);
+    if (formFieldsNode == null || !formFieldsNode.isObject()) {
+      return null;
+    }
+
+    return normalizeAnswerValue(formFieldsNode.get("shortBio"));
+  }
+
+  // 지원서 답변 목록 추출
+  private List<ApplicationAnswerResponse> extractAnswerResponses(
+      Long templateId, String rawFormFields) {
+    JsonNode formFieldsNode = readJsonNode(rawFormFields);
+    if (formFieldsNode == null || !formFieldsNode.isObject()) {
+      return List.of();
+    }
+
+    Map<String, String> labelMap = readAnswerLabelMap(templateId);
+    List<ApplicationAnswerResponse> answers = new ArrayList<>();
+    Iterator<Map.Entry<String, JsonNode>> fields = formFieldsNode.fields();
+
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> field = fields.next();
+      String key = field.getKey();
+      if ("shortBio".equalsIgnoreCase(key)) {
+        continue;
+      }
+
+      String value = normalizeAnswerValue(field.getValue());
+      if (!StringUtils.hasText(value)) {
+        continue;
+      }
+
+      String label = resolveAnswerLabel(key, labelMap, answers.size() + 1);
+      answers.add(new ApplicationAnswerResponse(key, label, value));
+    }
+
+    return answers;
+  }
+
+  // 지원서 라벨 맵 조회
+  private Map<String, String> readAnswerLabelMap(Long templateId) {
+    if (templateId == null) {
+      return Map.of();
+    }
+
+    return applicationTemplateRepository
+        .findFormFieldsById(templateId)
+        .map(this::parseAnswerLabelMap)
+        .orElseGet(Map::of);
+  }
+
+  // 템플릿 필드 라벨 맵 파싱
+  private Map<String, String> parseAnswerLabelMap(String rawTemplateFields) {
+    JsonNode templateFieldsNode = readJsonNode(rawTemplateFields);
+    if (templateFieldsNode == null) {
+      return Map.of();
+    }
+
+    JsonNode targetNode = templateFieldsNode;
+    if (templateFieldsNode.isObject()) {
+      targetNode =
+          firstNonNull(
+              templateFieldsNode.get("customFields"),
+              templateFieldsNode.get("questions"),
+              templateFieldsNode.get("questionFields"),
+              templateFieldsNode.get("customQuestions"),
+              templateFieldsNode.get("formFields"),
+              templateFieldsNode.get("schema"),
+              templateFieldsNode.get("fields"),
+              templateFieldsNode.get("items"));
+    }
+
+    if (targetNode == null || !targetNode.isArray()) {
+      return Map.of();
+    }
+
+    Map<String, String> labelMap = new LinkedHashMap<>();
+    for (JsonNode fieldNode : targetNode) {
+      String key = textValue(fieldNode.get("id"));
+      String label = textValue(firstNonNull(fieldNode.get("label"), fieldNode.get("question")));
+      if (StringUtils.hasText(key) && StringUtils.hasText(label)) {
+        labelMap.put(key, label);
+      }
+    }
+
+    return labelMap;
+  }
+
+  // 답변 라벨 결정
+  private String resolveAnswerLabel(String key, Map<String, String> labelMap, int fallbackIndex) {
+    String label = labelMap.get(key);
+    if (StringUtils.hasText(label)) {
+      return label;
+    }
+
+    if ("portfolioUrl".equalsIgnoreCase(key) || "portfolio".equalsIgnoreCase(key)) {
+      return "포트폴리오 URL";
+    }
+
+    if (key != null && key.startsWith("custom_")) {
+      return "추가 질문 " + fallbackIndex;
+    }
+
+    return key;
+  }
+
+  // 답변 값 문자열 변환
+  private String normalizeAnswerValue(JsonNode valueNode) {
+    if (valueNode == null || valueNode.isNull()) {
+      return null;
+    }
+
+    if (valueNode.isTextual()) {
+      return normalizeRawTextAnswer(valueNode.asText());
+    }
+
+    if (valueNode.isArray()) {
+      List<String> values = new ArrayList<>();
+      for (JsonNode itemNode : valueNode) {
+        String normalized = normalizeAnswerValue(itemNode);
+        if (StringUtils.hasText(normalized)) {
+          values.add(normalized);
+        }
+      }
+      return values.isEmpty() ? null : String.join(", ", values);
+    }
+
+    if (valueNode.isBoolean()) {
+      return valueNode.asBoolean() ? "예" : "아니오";
+    }
+
+    if (valueNode.isNumber()) {
+      return valueNode.asText();
+    }
+
+    return valueNode.toString();
+  }
+
+  // 문자열 답변 정규화
+  private String normalizeRawTextAnswer(String rawValue) {
+    if (!StringUtils.hasText(rawValue)) {
+      return null;
+    }
+
+    String trimmed = rawValue.trim();
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      JsonNode nestedNode = readJsonNode(trimmed);
+      if (nestedNode != null) {
+        return normalizeAnswerValue(nestedNode);
+      }
+    }
+
+    return trimmed;
+  }
+
+  // JSON 노드 파싱
+  private JsonNode readJsonNode(String rawJson) {
+    if (!StringUtils.hasText(rawJson)) {
+      return null;
+    }
+
+    try {
+      JsonNode parsedNode = objectMapper.readTree(rawJson);
+
+      for (int i = 0; i < 3; i += 1) {
+        if (parsedNode == null || !parsedNode.isTextual()) {
+          break;
+        }
+
+        String nestedJson = parsedNode.asText();
+        if (!StringUtils.hasText(nestedJson)) {
+          break;
+        }
+
+        String trimmed = nestedJson.trim();
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+          break;
+        }
+
+        parsedNode = objectMapper.readTree(trimmed);
+      }
+
+      return parsedNode;
+    } catch (Exception exception) {
+      return null;
+    }
+  }
+
+  // 첫 번째 유효 노드 조회
+  private JsonNode firstNonNull(JsonNode... nodes) {
+    for (JsonNode node : nodes) {
+      if (node != null && !node.isNull()) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  // 텍스트 값 추출
+  private String textValue(JsonNode node) {
+    if (node == null || node.isNull()) {
+      return null;
+    }
+    return node.asText();
   }
 
   private Long resolveTemplateId(Long requestTemplateId, RecruitmentEntity recruitment) {
@@ -237,7 +456,6 @@ public class ApplicationService {
     }
 
     Long beforeProcessId = entity.getRecruitmentProcessId();
-    RecruitmentStageEntity currentStage = getRecruitmentStage(beforeProcessId);
     entity.updateRecruitmentProcessId(recruitmentProcessId);
 
     applicationProcessHistoryRepository.save(
@@ -262,20 +480,6 @@ public class ApplicationService {
     }
 
     automationEventExecutor.executePendingForApplication(applicationId);
-
-    domainEventPublisher.publish(
-        ApplicationProcessChangedEvent.of(
-            currentTenantId(),
-            applicationId,
-            entity.getName(),
-            entity.getRecruitmentId(),
-            actorId,
-            currentStage.getId(),
-            currentStage.getStageName(),
-            currentStage.getStageType(),
-            destinationStage.getId(),
-            destinationStage.getStageName(),
-            destinationStage.getStageType()));
   }
 
   private void requireTenant() {

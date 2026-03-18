@@ -14,7 +14,8 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
   List<MemberEntity> findByStatus(EntityStatus status);
 
   @Query(
-      value = "SELECT tenant_id FROM workspace_members WHERE user_id = :userId LIMIT 1",
+      value =
+          "SELECT tenant_id FROM workspace_members WHERE user_id = :userId AND status = 'ACTIVE' LIMIT 1",
       nativeQuery = true)
   Optional<String> findTenantIdByUserId(@Param("userId") Long userId);
 
@@ -22,7 +23,7 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
 
   MemberEntity findByTenantIdAndUserIdAndStatus(String tenantId, Long userId, EntityStatus status);
 
-  boolean existsByTenantIdAndUserId(String workspaceId, Long userId);
+  boolean existsByTenantIdAndUserIdAndStatus(String workspaceId, Long userId, EntityStatus status);
 
   List<MemberEntity> findByGroupIdAndStatus(Long groupId, EntityStatus status);
 
@@ -42,4 +43,7 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
       @Param("groupIds") List<Long> groupIds, @Param("status") EntityStatus status);
 
   long countByTenantIdAndStatus(String tenantId, EntityStatus status);
+
+  long countByTenantIdAndMemberTypeAndStatus(
+      String tenantId, com.coffiness.calfit.core.enums.MemberType memberType, EntityStatus status);
 }

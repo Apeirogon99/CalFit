@@ -48,6 +48,10 @@ subprojects {
     bootJar.enabled = false
     jar.enabled = true
 
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
     test {
         useJUnitPlatform {
             excludeTags('develop', 'restdocs')

@@ -66,7 +66,8 @@ public class AutomationRuleService {
         request.recruitmentProcessId(),
         request.triggerType(),
         request.actionType(),
-        null);
+        null,
+        request.payload());
 
     AutomationRuleEntity saved =
         automationRuleRepository.save(
@@ -97,7 +98,8 @@ public class AutomationRuleService {
         request.recruitmentProcessId(),
         request.triggerType(),
         request.actionType(),
-        entity.getId());
+        entity.getId(),
+        request.payload());
 
     entity.update(
         request.recruitmentProcessId(),
@@ -159,7 +161,9 @@ public class AutomationRuleService {
       Long recruitmentProcessId,
       com.coffiness.calfit.core.enums.AutomationTriggerType triggerType,
       com.coffiness.calfit.core.enums.AutomationActionType actionType,
-      Long currentRuleId) {
+      Long currentRuleId,
+      JsonNode payload) {
+    JsonNode normalizedPayload = normalizePayload(payload);
     List<AutomationRuleEntity> rules =
         automationRuleRepository.findByRecruitmentIdAndStatusOrderByCreatedAtAsc(
             recruitmentId, EntityStatus.ACTIVE);
@@ -170,7 +174,8 @@ public class AutomationRuleService {
                     !rule.getId().equals(currentRuleId)
                         && rule.getRecruitmentProcessId().equals(recruitmentProcessId)
                         && rule.getTriggerType() == triggerType
-                        && rule.getActionType() == actionType);
+                        && rule.getActionType() == actionType
+                        && parsePayload(rule.getPayload()).equals(normalizedPayload));
     if (duplicated) {
       throw new CoreException(ErrorType.VALIDATION_ERROR);
     }

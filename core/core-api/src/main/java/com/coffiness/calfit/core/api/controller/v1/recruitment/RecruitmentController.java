@@ -14,7 +14,6 @@ import com.coffiness.calfit.domain.interview.InterviewScheduleCalendarItem;
 import com.coffiness.calfit.domain.interview.WeeklyInterviewScheduleItem;
 import com.coffiness.calfit.domain.recruitment.RecruitmentDetailInfo;
 import com.coffiness.calfit.domain.recruitment.RecruitmentListInfo;
-import com.coffiness.calfit.domain.recruitment.RecruitmentService;
 import com.coffiness.calfit.support.security.jwt.SecurityUser;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -34,7 +33,6 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class RecruitmentController {
 
-  private final RecruitmentService recruitmentService;
   private final RecruitmentFacade recruitmentFacade;
 
   @ResponseStatus(HttpStatus.CREATED)
@@ -58,7 +56,7 @@ public class RecruitmentController {
     long userId = user.userId();
 
     List<RecruitmentListInfo> infos =
-        recruitmentService.getRecruitmentList(userId, recruitmentStatus, pageable);
+        recruitmentFacade.getRecruitmentList(userId, recruitmentStatus, pageable);
 
     List<RecruitmentListResponse> response =
         infos.stream().map(RecruitmentListResponse::from).toList();
@@ -71,7 +69,7 @@ public class RecruitmentController {
       @AuthenticationPrincipal SecurityUser user, @PathVariable Long recruitmentId) {
     long userId = user.userId();
 
-    RecruitmentDetailInfo info = recruitmentService.getRecruitmentDetail(userId, recruitmentId);
+    RecruitmentDetailInfo info = recruitmentFacade.getRecruitmentDetail(userId, recruitmentId);
 
     return ApiResponse.success(RecruitmentDetailResponse.from(info));
   }

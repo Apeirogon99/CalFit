@@ -3,6 +3,7 @@ package com.coffiness.calfit.api.recruitment.schedule;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
+import com.coffiness.calfit.api.fixture.ApplicationTemplateFixture;
 import com.coffiness.calfit.api.fixture.InterviewFixture;
 import com.coffiness.calfit.api.fixture.MeetingRoomFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
@@ -22,8 +23,6 @@ import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import com.coffiness.calfit.storage.db.core.application.ApplicationRepository;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateEntity;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
 import com.coffiness.calfit.storage.db.core.user.GroupEntity;
 import com.coffiness.calfit.storage.db.core.user.GroupRepository;
 import java.time.LocalDateTime;
@@ -45,7 +44,7 @@ public class GET_specs {
       @Autowired InterviewFixture interviewFixture,
       @Autowired ApplicationRepository applicationRepository,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
@@ -54,7 +53,8 @@ public class GET_specs {
     String recruitmentTitle = "2026년 상반기 백엔드 신입 모집";
     Long interviewerId = userFixture.me(token).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(token, tenantId, applicationTemplateFixture);
 
     LocalDateTime now = LocalDateTime.now();
 
@@ -147,14 +147,7 @@ public class GET_specs {
 
   // 현재 tenant에서 사용할 지원서 템플릿을 생성
   private Long createApplicationTemplate(
-      String tenantId, ApplicationTemplateRepository applicationTemplateRepository) {
-    TenantContext.setTenantId(tenantId);
-    try {
-      return applicationTemplateRepository
-          .save(ApplicationTemplateEntity.create("면접 일정 테스트 템플릿", "{}", true))
-          .getId();
-    } finally {
-      TenantContext.clear();
-    }
+      String token, String tenantId, ApplicationTemplateFixture applicationTemplateFixture) {
+    return applicationTemplateFixture.createUsedTemplateId(token, tenantId, "recruitment-schedule");
   }
 }

@@ -68,6 +68,23 @@ public record MemberFixture(
         GroupResponse.class);
   }
 
+  // ==================== Group API Calls ====================
+
+  public ApiResponse<GroupResponse[]> getGroups(String token, String tenantId) {
+    return exchangeWithTenant(
+        "/api/v1/groups", HttpMethod.GET, null, token, tenantId, GroupResponse[].class);
+  }
+
+  public ApiResponse<GroupResponse> createGroupRaw(Object request, String token, String tenantId) {
+    return exchangeWithTenant(
+        "/api/v1/groups", HttpMethod.POST, request, token, tenantId, GroupResponse.class);
+  }
+
+  public ApiResponse<Void> deleteGroup(Long groupId, String token, String tenantId) {
+    return exchangeWithTenant(
+        "/api/v1/groups/" + groupId, HttpMethod.DELETE, null, token, tenantId, Void.class);
+  }
+
   // ==================== Invitation API Calls ====================
 
   public ApiResponse<InvitationResponse> createInvitation(
@@ -129,6 +146,23 @@ public record MemberFixture(
     return userId;
   }
 
+  /** 워크스페이스에 두 번째 멤버 추가 후 토큰과 멤버 ID를 함께 반환한다. 권한(403) 테스트 등에서 비-HR 멤버의 토큰이 필요할 때 사용한다. */
+  public MemberContext addSecondMemberWithToken(WorkspaceContext context) {
+    String inviteeEmail = userFixture.randomEmail();
+    String inviteePassword = userFixture.randomPassword();
+    userFixture.signUp(inviteeEmail, inviteePassword, userFixture.randomName());
+
+    ApiResponse<InvitationResponse> invitationResponse =
+        createInvitation(
+            context.hrToken(), context.workspaceId(), inviteeEmail, MemberType.INTERVIEWER);
+    String invitationToken = invitationResponse.getData().token();
+
+    String inviteeToken = userFixture.login(inviteeEmail, inviteePassword).getData().accessToken();
+    acceptInvitation(invitationToken, inviteeToken);
+    MemberResponse memberResponse = getMyMember(inviteeToken, context.workspaceId()).getData();
+    return new MemberContext(inviteeToken, memberResponse.id());
+  }
+
   // ==================== Private Helpers ====================
 
   @SuppressWarnings("unchecked")
@@ -169,4 +203,6 @@ public record MemberFixture(
   // ==================== Context Records ====================
 
   public record WorkspaceContext(String hrToken, String workspaceId) {}
+
+  public record MemberContext(String token, Long memberId) {}
 }

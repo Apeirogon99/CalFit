@@ -54,7 +54,16 @@ public class DELETE_specs {
 
   @Test
   void 권한_없는_사용자가_요청하면_403_Forbidden을_반환한다(@Autowired MemberFixture fixture) {
-    // TODO: 멤버 역할 기반 권한 체크 로직 구현 후 작성
+    // Arrange: HR이 아닌 INTERVIEWER 멤버 추가
+    WorkspaceContext ctx = fixture.setupWorkspace();
+    MemberFixture.MemberContext nonHr = fixture.addSecondMemberWithToken(ctx);
+
+    // Act: INTERVIEWER가 멤버 삭제 시도
+    ApiResponse<Void> response =
+        fixture.removeMember(nonHr.memberId(), nonHr.token(), ctx.workspaceId());
+
+    // Assert
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test
@@ -72,9 +81,16 @@ public class DELETE_specs {
 
   @Test
   void 자기_자신을_삭제하면_에러를_반환한다(@Autowired MemberFixture fixture) {
-    // TODO: MemberService.removeMember에 자기 자신 삭제 방지 로직 추가 후 작성
-    // 구현 방향: removeMember(memberId, requestUserId) 시그니처로 변경하여
-    //           삭제 대상 멤버의 memberId == requestUserId이면 CoreException 발생
+    // Arrange: 워크스페이스 생성자(HR)의 멤버 ID 획득
+    WorkspaceContext ctx = fixture.setupWorkspace();
+    MemberResponse myMember = fixture.getMyMember(ctx.hrToken(), ctx.workspaceId()).getData();
+
+    // Act: 자기 자신을 삭제 시도
+    ApiResponse<Void> response =
+        fixture.removeMember(myMember.id(), ctx.hrToken(), ctx.workspaceId());
+
+    // Assert: 자기 자신 삭제는 거부되어야 함
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
   @Test

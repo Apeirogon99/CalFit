@@ -40,7 +40,7 @@ pipeline {
             steps {
                 sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}"
                 sh "kubectl set image deployment/coffiiness backend=${ECR_REGISTRY}/${ECR_REPO}:${BUILD_NUMBER} -n default"
-                sh "kubectl rollout status deployment/coffiiness -n default --timeout=180s"
+                sh "kubectl rollout status deployment/coffiiness -n default --timeout=300s"
             }
         }
     }

@@ -34,7 +34,10 @@ public class MemberController {
 
   @PatchMapping("/api/v1/members/{memberId}")
   public ApiResponse<?> updateMember(
-      @PathVariable Long memberId, @RequestBody UpdateMemberRequest request) {
+      @PathVariable Long memberId,
+      @RequestBody UpdateMemberRequest request,
+      @AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.validateHrRole(securityUser.userId());
     memberService.updateMemberType(memberId, request.memberType());
     return ApiResponse.success();
   }
@@ -42,19 +45,31 @@ public class MemberController {
   @DeleteMapping("/api/v1/members/{memberId}")
   public ApiResponse<?> removeMember(
       @PathVariable Long memberId, @AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.validateHrRole(securityUser.userId());
     memberService.removeMember(securityUser.userId(), memberId);
+    return ApiResponse.success();
+  }
+
+  @PostMapping("/api/v1/workspaces/leave")
+  public ApiResponse<?> leaveWorkspace(@AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.leaveWorkspace(securityUser.userId());
     return ApiResponse.success();
   }
 
   @PatchMapping("/api/v1/members/{memberId}/group")
   public ApiResponse<?> assignGroup(
-      @PathVariable Long memberId, @RequestBody AssignGroupRequest request) {
+      @PathVariable Long memberId,
+      @RequestBody AssignGroupRequest request,
+      @AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.validateHrRole(securityUser.userId());
     memberService.assignGroup(memberId, request.groupId());
     return ApiResponse.success();
   }
 
   @DeleteMapping("/api/v1/members/{memberId}/group")
-  public ApiResponse<?> leaveGroup(@PathVariable Long memberId) {
+  public ApiResponse<?> leaveGroup(
+      @PathVariable Long memberId, @AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.validateHrRole(securityUser.userId());
     memberService.leaveGroup(memberId);
     return ApiResponse.success();
   }

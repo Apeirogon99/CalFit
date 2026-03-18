@@ -2,8 +2,10 @@ package com.coffiness.calfit.domain.workspace.invitation;
 
 import com.coffiness.calfit.core.enums.InvitationStatus;
 import com.coffiness.calfit.core.enums.MemberType;
+import com.coffiness.calfit.domain.workspace.member.MemberReader;
 import com.coffiness.calfit.storage.db.core.invitation.WorkspaceInvitationEntity;
 import com.coffiness.calfit.storage.db.core.invitation.WorkspaceInvitationRepository;
+import com.coffiness.calfit.storage.db.core.user.UserEntity;
 import com.coffiness.calfit.storage.db.core.user.UserRepository;
 import com.coffiness.calfit.storage.db.core.workspace.WorkspaceRepository;
 import com.coffiness.calfit.support.email.EmailProperties;
@@ -12,6 +14,8 @@ import com.coffiness.calfit.support.email.InvitationEmailMessage;
 import com.coffiness.calfit.support.error.CoreException;
 import com.coffiness.calfit.support.error.ErrorType;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +33,7 @@ public class InvitationService {
   private final WorkspaceInvitationRepository invitationRepository;
   private final WorkspaceRepository workspaceRepository;
   private final UserRepository userRepository;
+  private final MemberReader memberReader;
   private final EmailService emailService;
   private final EmailProperties emailProperties;
 
@@ -37,7 +42,14 @@ public class InvitationService {
       String workspaceId, String email, MemberType memberType, Long invitedBy) {
     if (invitationRepository.existsByWorkspaceIdAndEmailAndInvitationStatus(
         workspaceId, email, InvitationStatus.PENDING)) {
-      throw new CoreException(ErrorType.VALIDATION_ERROR);
+      throw new CoreException(ErrorType.VALIDATION_ERROR, Map.of("message", "이미 대기 중인 초대가 있습니다."));
+    }
+
+    // 이미 워크스페이스 멤버인지 확인
+    Optional<UserEntity> existingUser = userRepository.findByEmail(email);
+    if (existingUser.isPresent() && memberReader.exists(workspaceId, existingUser.get().getId())) {
+      throw new CoreException(
+          ErrorType.VALIDATION_ERROR, Map.of("message", "이미 워크스페이스에 가입된 멤버입니다."));
     }
 
     String token = UUID.randomUUID().toString();

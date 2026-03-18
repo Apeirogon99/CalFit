@@ -43,6 +43,17 @@ import org.springframework.test.annotation.DirtiesContext;
 class GET_specs {
 
   @Test
+  void 토큰이_없으면_면접_대기_지원자_조회에_실패한다(
+      @Autowired MemberFixture memberFixture, @Autowired InterviewFixture interviewFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+
+    ApiResponse<List<InterviewPendingStageResponse>> response =
+        interviewFixture.getPendingApplicants(null, context.workspaceId(), 1L);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
   void 면접_단계별로_면접이_안잡힌_지원자만_조회한다(
       @Autowired MemberFixture memberFixture,
       @Autowired UserFixture userFixture,

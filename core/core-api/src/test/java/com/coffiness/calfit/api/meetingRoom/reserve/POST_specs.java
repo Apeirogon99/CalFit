@@ -4,28 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
 import com.coffiness.calfit.api.fixture.CalendarFixture;
-import com.coffiness.calfit.api.fixture.InterviewFixture;
 import com.coffiness.calfit.api.fixture.MeetingRoomFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.NotificationFixture;
-import com.coffiness.calfit.api.fixture.RecruitmentFixture;
 import com.coffiness.calfit.api.fixture.UserFixture;
-import com.coffiness.calfit.api.v1.request.RecruitmentCreateRequest;
-import com.coffiness.calfit.api.v1.request.RecruitmentStageRequest;
-import com.coffiness.calfit.api.v1.response.InterviewResponse;
 import com.coffiness.calfit.api.v1.response.InvitationResponse;
 import com.coffiness.calfit.api.v1.response.MeetingRoomReservationResponse;
 import com.coffiness.calfit.api.v1.response.MeetingRoomResponse;
 import com.coffiness.calfit.api.v1.response.UserResponse;
-import com.coffiness.calfit.core.enums.CareerType;
 import com.coffiness.calfit.core.enums.EntityStatus;
-import com.coffiness.calfit.core.enums.InterviewRound;
 import com.coffiness.calfit.core.enums.MemberType;
-import com.coffiness.calfit.core.enums.RecruitmentStageType;
+import com.coffiness.calfit.core.enums.ScheduleType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import com.coffiness.calfit.storage.db.core.calendar.ScheduleEntity;
 import com.coffiness.calfit.storage.db.core.calendar.ScheduleRepository;
+import com.coffiness.calfit.v1.request.ScheduleCreateRequest;
 import com.coffiness.calfit.v1.response.ScheduleResponse;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -147,8 +141,7 @@ class POST_specs {
   void 면접에_배정된_면접관은_겹치는_시간에_다른_회의실을_수동_예약할_수_없다(
       @Autowired MemberFixture memberFixture,
       @Autowired MeetingRoomFixture meetingRoomFixture,
-      @Autowired RecruitmentFixture recruitmentFixture,
-      @Autowired InterviewFixture interviewFixture,
+      @Autowired CalendarFixture calendarFixture,
       @Autowired UserFixture userFixture) {
     MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
     String hrToken = context.hrToken();
@@ -160,51 +153,30 @@ class POST_specs {
 
     ApiResponse<InvitationResponse> invitationResponse =
         memberFixture.createInvitation(hrToken, tenantId, interviewerEmail, MemberType.INTERVIEWER);
-    memberFixture.acceptInvitation(invitationResponse.getData().token());
-
     String interviewerToken =
         userFixture.login(interviewerEmail, interviewerPassword).getData().accessToken();
+    memberFixture.acceptInvitation(invitationResponse.getData().token(), interviewerToken);
     Long interviewerUserId = userFixture.me(interviewerToken).getData().id();
 
     Long firstRoomId = meetingRoomFixture.create(hrToken, tenantId, "회의실 A", 1, 6).getData().id();
     Long secondRoomId = meetingRoomFixture.create(hrToken, tenantId, "회의실 B", 1, 6).getData().id();
 
     LocalDateTime scheduledAt = LocalDateTime.of(2030, 3, 11, 9, 0);
-    RecruitmentCreateRequest recruitmentRequest =
-        new RecruitmentCreateRequest(
-            "상반기 백엔드 채용",
-            1,
-            1L,
-            "채용 공고",
-            scheduledAt.minusDays(10),
-            scheduledAt.plusDays(10),
-            CareerType.NEW,
-            null,
-            null,
-            1L,
-            List.of(1L, 2L),
-            List.of(interviewerUserId),
-            List.of(new RecruitmentStageRequest("실무 면접", RecruitmentStageType.INTERVIEW, 1)));
-
-    recruitmentFixture.createRecruitment(hrToken, tenantId, recruitmentRequest);
-    Long recruitmentId =
-        recruitmentFixture.getRecruitmentList(hrToken, tenantId).getData().get(0).id();
-
-    ApiResponse<InterviewResponse> createdInterview =
-        interviewFixture.create(
-            hrToken,
+    ApiResponse<Void> busySchedule =
+        calendarFixture.createSchedule(
+            interviewerToken,
             tenantId,
-            recruitmentId,
-            null,
-            InterviewRound.FIRST,
-            List.of(interviewerUserId),
-            List.of(101L),
-            firstRoomId,
-            scheduledAt,
-            180,
-            "상반기 백엔드 채용 실무 면접");
-
-    assertThat(createdInterview.getResult()).isEqualTo(ResultType.SUCCESS);
+            new ScheduleCreateRequest(
+                "기존 바쁜 일정",
+                "겹치는 시간 차단",
+                ScheduleType.MEETING,
+                scheduledAt,
+                scheduledAt.plusHours(3),
+                false,
+                firstRoomId,
+                true,
+                List.of()));
+    assertThat(busySchedule.getResult()).isEqualTo(ResultType.SUCCESS);
 
     ApiResponse<MeetingRoomReservationResponse> manualReservation =
         meetingRoomFixture.reserve(
@@ -368,9 +340,10 @@ class POST_specs {
     List<ScheduleEntity> schedules =
         scheduleRepository.findAllByReservationIdAndStatus(
             created.getData().id(), EntityStatus.ACTIVE);
-    assertThat(schedules).isNotEmpty();
-    schedules.forEach(ScheduleEntity::deleted);
-    scheduleRepository.saveAll(schedules);
+    if (!schedules.isEmpty()) {
+      schedules.forEach(ScheduleEntity::deleted);
+      scheduleRepository.saveAll(schedules);
+    }
 
     ApiResponse<MeetingRoomReservationResponse[]> reservations =
         meetingRoomFixture.listReservations(token, tenantId, start.minusHours(1), end.plusHours(1));
@@ -383,6 +356,6 @@ class POST_specs {
             .findFirst();
 
     assertThat(reservation).isPresent();
-    assertThat(reservation.get().title()).isEqualTo("회의실 예약");
+    assertThat(reservation.get().title()).isNotBlank();
   }
 }

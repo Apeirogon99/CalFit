@@ -67,6 +67,12 @@ public class FixtureConfiguration {
 
   @Bean
   @Scope("prototype")
+  AutomationRuleFixture automationRuleFixture(Environment environment, ObjectMapper objectMapper) {
+    return AutomationRuleFixture.create(environment, objectMapper);
+  }
+
+  @Bean
+  @Scope("prototype")
   RecruitmentFixture recruitmentFixture(Environment environment, ObjectMapper objectMapper) {
     return RecruitmentFixture.create(environment, objectMapper);
   }
@@ -94,5 +100,19 @@ public class FixtureConfiguration {
   @Scope("prototype")
   ApplicationFixture applicationFixture(Environment environment, ObjectMapper objectMapper) {
     return ApplicationFixture.create(environment, objectMapper);
+  }
+
+  @Bean
+  @Scope("prototype")
+  ApplicationTemplateFixture applicationTemplateFixture(
+      Environment environment, ObjectMapper objectMapper) {
+    return ApplicationTemplateFixture.create(environment, objectMapper);
+  }
+
+  @Bean
+  @Scope("prototype")
+  ApplicationExcelFixture applicationExcelFixture(
+      Environment environment, ObjectMapper objectMapper) {
+    return ApplicationExcelFixture.create(environment, objectMapper);
   }
 }

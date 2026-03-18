@@ -4,10 +4,12 @@ import com.coffiness.calfit.api.v1.request.RecruitmentCreateRequest;
 import com.coffiness.calfit.api.v1.request.RecruitmentInterviewersUpdateRequest;
 import com.coffiness.calfit.api.v1.request.RecruitmentUpdateRequest;
 import com.coffiness.calfit.core.enums.MemberType;
+import com.coffiness.calfit.core.enums.RecruitmentStatus;
 import com.coffiness.calfit.domain.interview.InterviewReader;
 import com.coffiness.calfit.domain.interview.InterviewScheduleCalendarItem;
 import com.coffiness.calfit.domain.interview.WeeklyInterviewScheduleItem;
 import com.coffiness.calfit.domain.recruitment.RecruitmentDetailInfo;
+import com.coffiness.calfit.domain.recruitment.RecruitmentListInfo;
 import com.coffiness.calfit.domain.recruitment.RecruitmentReader;
 import com.coffiness.calfit.domain.recruitment.RecruitmentService;
 import com.coffiness.calfit.domain.workspace.member.Member;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,14 +46,31 @@ public class RecruitmentFacade {
     return recruitmentService.createRecruitment(userId, request);
   }
 
+  // 채용 공고 목록 조회
+  @Transactional(readOnly = true)
+  public List<RecruitmentListInfo> getRecruitmentList(
+      long userId, RecruitmentStatus recruitmentStatus, Pageable pageable) {
+    Member member = getRequiredMember(userId);
+    return recruitmentReader.readList(
+        userId,
+        member.groupId(),
+        member.memberType() == MemberType.HR,
+        recruitmentStatus,
+        pageable);
+  }
+
+  // 채용 공고 상세 조회
+  @Transactional(readOnly = true)
+  public RecruitmentDetailInfo getRecruitmentDetail(long userId, Long recruitmentId) {
+    Member member = getRequiredMember(userId);
+    validateReadableRecruitment(member, recruitmentId);
+    return recruitmentReader.readDetail(recruitmentId);
+  }
+
   public List<InterviewScheduleCalendarItem> getInterviewSchedule(
       long userId, Long recruitmentId, String yearMonth) {
     Member member = getRequiredMember(userId);
-
-    // 권한 검증: HR이 아닌 경우에만 면접관 여부 확인
-    if (member.memberType() != MemberType.HR) {
-      recruitmentService.assertCanAccess(userId, recruitmentId);
-    }
+    validateReadableRecruitment(member, recruitmentId);
 
     // 기간 파싱 및 면접 일정 조회
     YearMonth ym;
@@ -158,6 +178,20 @@ public class RecruitmentFacade {
 
     if (!template.isInUse()) {
       throw new CoreException(ErrorType.VALIDATION_ERROR);
+    }
+  }
+
+  // 채용 공고 읽기 권한 검증
+  private void validateReadableRecruitment(Member member, Long recruitmentId) {
+    if (member.memberType() == MemberType.HR) {
+      return;
+    }
+
+    List<Long> accessibleRecruitmentIds =
+        recruitmentReader.readAccessibleRecruitmentIds(member.userId(), member.groupId());
+
+    if (!accessibleRecruitmentIds.contains(recruitmentId)) {
+      throw new IllegalArgumentException("해당 채용 공고에 접근할 권한이 없습니다.");
     }
   }
 }

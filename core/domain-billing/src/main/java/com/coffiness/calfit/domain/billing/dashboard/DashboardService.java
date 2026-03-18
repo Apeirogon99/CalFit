@@ -75,16 +75,24 @@ public class DashboardService {
         mrr, mrrGrowth, subscribers, newThisMonth, churnRate, churnImprove, totalCost, costGrowth);
   }
 
-  public List<RevenueCostTrend> getRevenueCostTrend() {
+  public List<RevenueCostTrend> getRevenueCostTrend(String period) {
     List<MonthlyRevenue> revenues = invoiceReader.getMonthlyRevenue();
     List<MonthlyCostTotal> costs = costReader.getMonthlyTrend();
 
     Map<String, Long> revenueMap =
         revenues.stream()
-            .collect(Collectors.toMap(r -> r.year() + "-" + r.month(), MonthlyRevenue::amount));
+            .collect(
+                Collectors.toMap(
+                    r -> r.year() + "-" + r.month(), MonthlyRevenue::amount, Long::sum));
     Map<String, Long> costMap =
         costs.stream()
-            .collect(Collectors.toMap(c -> c.year() + "-" + c.month(), MonthlyCostTotal::amount));
+            .collect(
+                Collectors.toMap(
+                    c -> c.year() + "-" + c.month(), MonthlyCostTotal::amount, Long::sum));
+
+    if ("quarterly".equals(period)) {
+      return buildQuarterlyTrend(revenueMap, costMap);
+    }
 
     // 최근 8개월 추이 생성
     List<RevenueCostTrend> trend = new ArrayList<>();
@@ -98,6 +106,36 @@ public class DashboardService {
               d.getMonthValue(),
               revenueMap.getOrDefault(key, 0L),
               costMap.getOrDefault(key, 0L)));
+    }
+    return trend;
+  }
+
+  private List<RevenueCostTrend> buildQuarterlyTrend(
+      Map<String, Long> revenueMap, Map<String, Long> costMap) {
+    List<RevenueCostTrend> trend = new ArrayList<>();
+    LocalDate now = LocalDate.now();
+    int currentQuarter = (now.getMonthValue() - 1) / 3 + 1;
+    int currentYear = now.getYear();
+
+    // 최근 8분기
+    for (int i = 7; i >= 0; i--) {
+      int q = currentQuarter - i;
+      int y = currentYear;
+      while (q <= 0) {
+        q += 4;
+        y--;
+      }
+
+      long revenue = 0;
+      long cost = 0;
+      int startMonth = (q - 1) * 3 + 1;
+      for (int m = startMonth; m < startMonth + 3; m++) {
+        String key = y + "-" + m;
+        revenue += revenueMap.getOrDefault(key, 0L);
+        cost += costMap.getOrDefault(key, 0L);
+      }
+      // month 필드에 분기 번호 저장 (1~4)
+      trend.add(new RevenueCostTrend(y, q, revenue, cost));
     }
     return trend;
   }

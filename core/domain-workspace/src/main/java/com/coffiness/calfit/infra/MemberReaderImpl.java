@@ -1,6 +1,7 @@
 package com.coffiness.calfit.infra;
 
 import com.coffiness.calfit.core.enums.EntityStatus;
+import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.domain.workspace.member.Member;
 import com.coffiness.calfit.domain.workspace.member.MemberReader;
 import com.coffiness.calfit.storage.db.core.member.MemberEntity;
@@ -44,7 +45,8 @@ public class MemberReaderImpl implements MemberReader {
 
   @Override
   public boolean exists(String workspaceId, Long userId) {
-    return memberRepository.existsByTenantIdAndUserId(workspaceId, userId);
+    return memberRepository.existsByTenantIdAndUserIdAndStatus(
+        workspaceId, userId, EntityStatus.ACTIVE);
   }
 
   @Override
@@ -82,5 +84,11 @@ public class MemberReaderImpl implements MemberReader {
   @Override
   public long countActiveMembers(String workspaceId) {
     return memberRepository.countByTenantIdAndStatus(workspaceId, EntityStatus.ACTIVE);
+  }
+
+  @Override
+  public long countActiveHrMembers(String workspaceId) {
+    return memberRepository.countByTenantIdAndMemberTypeAndStatus(
+        workspaceId, MemberType.HR, EntityStatus.ACTIVE);
   }
 }

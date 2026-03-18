@@ -40,6 +40,7 @@ public class CalendarConnectService {
   private final ScheduleReader scheduleReader;
   private final ScheduleStore scheduleStore;
   private final GoogleChannelTokenService googleChannelTokenService;
+  private final ZoneId appZoneId;
 
   @Value(
       "${calendar.google-sync.watch-callback-url:http://localhost:8080/api/v1/calendars/google/notifications}")
@@ -65,7 +66,8 @@ public class CalendarConnectService {
             userId, workspaceCalendarId, exchangeResult);
 
     registerWatchChannel(externalCalendar, tenantId);
-    syncExistingSchedulesToGoogle(externalCalendar, userId);
+    syncExistingSchedulesToGoogle(
+        exchangeResult.accessToken(), externalCalendar.calendarId(), userId);
     return googleEmail;
   }
 
@@ -111,6 +113,7 @@ public class CalendarConnectService {
     }
 
     String accessToken = googleCalendarTokenService.getValidAccessToken(externalCalendar.id());
+    syncExistingSchedulesToGoogle(accessToken, externalCalendar.calendarId(), userId);
 
     GoogleCalendarSyncResult syncResult =
         syncGoogleEventsWithRecovery(accessToken, externalCalendar);
@@ -224,24 +227,22 @@ public class CalendarConnectService {
             hasText(syncEvent.summary()) ? syncEvent.summary() : "제목 없음",
             syncEvent.description(),
             ScheduleType.MEETING,
-            syncEvent.startTime().withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),
-            syncEvent.endTime().withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),
+            syncEvent.startTime().withZoneSameInstant(appZoneId).toLocalDateTime(),
+            syncEvent.endTime().withZoneSameInstant(appZoneId).toLocalDateTime(),
             syncEvent.allDay());
 
     scheduleService.upsertScheduleByGoogleEventId(userId, request);
   }
 
   // 연동 직후 기존 CalFit 일정을 구글 캘린더로 한 번 백필
-  private void syncExistingSchedulesToGoogle(ExternalCalendar externalCalendar, Long userId) {
-    if (externalCalendar == null || userId == null) {
+  private void syncExistingSchedulesToGoogle(String accessToken, String calendarId, Long userId) {
+    if (userId == null) {
       return;
     }
 
-    if (!hasText(externalCalendar.calendarId())) {
+    if (!hasText(accessToken) || !hasText(calendarId)) {
       return;
     }
-
-    String accessToken = googleCalendarTokenService.getValidAccessToken(externalCalendar.id());
 
     for (Schedule schedule : scheduleReader.readAllOwnedSchedules(userId)) {
       if (hasText(schedule.googleEventId())) {
@@ -249,7 +250,7 @@ public class CalendarConnectService {
       }
 
       try {
-        syncExistingSchedule(accessToken, externalCalendar.calendarId(), schedule);
+        syncExistingSchedule(accessToken, calendarId, schedule);
       } catch (RuntimeException e) {
         log.warn("기존 일정 구글 백필에 실패했습니다. scheduleId={}, userId={}", schedule.id(), userId, e);
       }
@@ -264,8 +265,8 @@ public class CalendarConnectService {
             calendarId,
             schedule.title(),
             schedule.description(),
-            schedule.startTime().atZone(ZoneId.systemDefault()),
-            schedule.endTime().atZone(ZoneId.systemDefault()),
+            schedule.startTime().atZone(appZoneId),
+            schedule.endTime().atZone(appZoneId),
             schedule.isAllDay());
 
     if (created == null || !created.status() || !hasText(created.googleEventId())) {

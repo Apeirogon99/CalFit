@@ -3,15 +3,19 @@ package com.coffiness.calfit.infra;
 import com.coffiness.calfit.core.enums.EntityStatus;
 import com.coffiness.calfit.core.enums.RecruitmentStatus;
 import com.coffiness.calfit.domain.recruitment.Recruitment;
+import com.coffiness.calfit.domain.recruitment.RecruitmentStage;
 import com.coffiness.calfit.domain.recruitment.RecruitmentStore;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentEntity;
+import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentInterviewerEntity;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentInterviewerRepository;
+import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentReferenceGroupEntity;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentReferenceGroupRepository;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentRepository;
 import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentStageRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -102,7 +106,7 @@ public class RecruitmentStoreImpl implements RecruitmentStore {
 
     insertChildren(recruitment.id(), recruitment);
 
-    return recruitment;
+    return readPersistedRecruitment(recruitment.id());
   }
 
   @Override
@@ -119,7 +123,7 @@ public class RecruitmentStoreImpl implements RecruitmentStore {
     recruitmentInterviewerRepository.deleteAllByRecruitmentId(recruitment.id());
     batchInsertInterviewers(recruitment.id(), recruitment, resolveTenantId());
 
-    return recruitment;
+    return readPersistedRecruitment(recruitment.id());
   }
 
   @Override
@@ -233,5 +237,53 @@ public class RecruitmentStoreImpl implements RecruitmentStore {
       return "default";
     }
     return tenantId;
+  }
+
+  private Recruitment readPersistedRecruitment(Long recruitmentId) {
+    RecruitmentEntity persistedEntity =
+        recruitmentRepository
+            .findByIdAndStatus(recruitmentId, EntityStatus.ACTIVE)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채용 공고입니다."));
+
+    List<RecruitmentStage> stages =
+        recruitmentStageRepository.findByRecruitmentId(recruitmentId).stream()
+            .map(
+                stage ->
+                    new RecruitmentStage(
+                        stage.getId(),
+                        stage.getStageName(),
+                        stage.getStageStep(),
+                        stage.getStageType()))
+            .toList();
+
+    List<Long> interviewerIds =
+        recruitmentInterviewerRepository.findByRecruitmentId(recruitmentId).stream()
+            .map(RecruitmentInterviewerEntity::getUserId)
+            .filter(Objects::nonNull)
+            .toList();
+
+    List<Long> referenceGroupIds =
+        recruitmentReferenceGroupRepository.findByRecruitmentId(recruitmentId).stream()
+            .map(RecruitmentReferenceGroupEntity::getGroupId)
+            .filter(Objects::nonNull)
+            .toList();
+
+    return new Recruitment(
+        persistedEntity.getId(),
+        persistedEntity.getCreatorId(),
+        persistedEntity.getTitle(),
+        persistedEntity.getContents(),
+        persistedEntity.getRecruitmentStatus(),
+        persistedEntity.getTargetCount(),
+        persistedEntity.getStartDate(),
+        persistedEntity.getEndDate(),
+        persistedEntity.getApplicationTemplateId(),
+        persistedEntity.getCareerType(),
+        persistedEntity.getMinExperienceYears(),
+        persistedEntity.getMaxExperienceYears(),
+        persistedEntity.getLeadGroupId(),
+        referenceGroupIds,
+        interviewerIds,
+        stages);
   }
 }

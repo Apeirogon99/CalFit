@@ -11,10 +11,9 @@ public interface ApplicationTemplateRepository
     extends JpaRepository<ApplicationTemplateEntity, Long> {
 
   @Query(
-      value =
-          "SELECT t.form_fields FROM applicationTemplates t"
-              + " WHERE t.id = :templateId AND t.status = 'ACTIVE'",
-      nativeQuery = true)
+      "SELECT t.formFields FROM ApplicationTemplateEntity t"
+          + " WHERE t.id = :templateId"
+          + " AND t.status = com.coffiness.calfit.core.enums.EntityStatus.ACTIVE")
   Optional<String> findFormFieldsById(@Param("templateId") Long templateId);
 
   @Query(

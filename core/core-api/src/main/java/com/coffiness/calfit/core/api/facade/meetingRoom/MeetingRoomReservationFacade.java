@@ -17,7 +17,10 @@ import com.coffiness.calfit.support.error.CoreException;
 import com.coffiness.calfit.support.error.ErrorType;
 import com.coffiness.calfit.support.event.DomainEventPublisher;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -81,9 +84,18 @@ public class MeetingRoomReservationFacade {
   @Transactional(readOnly = true)
   public List<MeetingRoomReservationResponse> getActiveReservationResponses(
       LocalDateTime fromDatetime, LocalDateTime toDatetime) {
-    return meetingRoomReservationService.listActiveReservations(fromDatetime, toDatetime).stream()
-        .map(this::toResponse)
-        .toList();
+    List<MeetingRoomReservation> reservations =
+        meetingRoomReservationService.listActiveReservations(fromDatetime, toDatetime);
+    if (reservations.isEmpty()) {
+      return List.of();
+    }
+
+    try {
+      return buildReservationResponses(reservations);
+    } catch (RuntimeException exception) {
+      log.warn("회의실 예약 응답 일괄 조립에 실패했습니다. reservationCount={}", reservations.size(), exception);
+      return reservations.stream().map(this::toResponse).toList();
+    }
   }
 
   @Transactional(readOnly = true)
@@ -93,7 +105,7 @@ public class MeetingRoomReservationFacade {
       schedules = scheduleReader.findByReservationId(reservation.id());
     } catch (RuntimeException exception) {
       log.warn(
-          "Failed to load schedules for meeting room reservation. reservationId={}, meetingRoomId={}, interviewScheduleId={}",
+          "회의실 예약에 연결된 일정 조회에 실패했습니다. reservationId={}, meetingRoomId={}, interviewScheduleId={}",
           reservation.id(),
           reservation.meetingRoomId(),
           reservation.interviewScheduleId(),
@@ -122,7 +134,7 @@ public class MeetingRoomReservationFacade {
           reservation.status());
     } catch (RuntimeException exception) {
       log.warn(
-          "Failed to build meeting room reservation response. reservationId={}, meetingRoomId={}, interviewScheduleId={}, scheduleId={}",
+          "회의실 예약 응답 조립에 실패했습니다. reservationId={}, meetingRoomId={}, interviewScheduleId={}, scheduleId={}",
           reservation.id(),
           reservation.meetingRoomId(),
           reservation.interviewScheduleId(),
@@ -130,6 +142,79 @@ public class MeetingRoomReservationFacade {
           exception);
       return MeetingRoomReservationResponse.fromFallback(reservation);
     }
+  }
+
+  private List<MeetingRoomReservationResponse> buildReservationResponses(
+      List<MeetingRoomReservation> reservations) {
+    // 예약 응답 조립 대상 ID 수집
+    List<Long> reservationIds =
+        reservations.stream()
+            .map(MeetingRoomReservation::id)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+
+    // 예약별 연결 일정 일괄 조회
+    Map<Long, List<Schedule>> schedulesByReservationId =
+        scheduleReader.findByReservationIds(reservationIds).stream()
+            .filter(schedule -> schedule.reservationId() != null)
+            .collect(
+                java.util.stream.Collectors.groupingBy(
+                    Schedule::reservationId,
+                    LinkedHashMap::new,
+                    java.util.stream.Collectors.toList()));
+
+    // 응답에 사용할 대표 일정 ID 수집
+    List<Long> representativeScheduleIds =
+        reservations.stream()
+            .map(
+                reservation -> {
+                  List<Schedule> schedules =
+                      schedulesByReservationId.getOrDefault(reservation.id(), List.of());
+                  if (schedules.isEmpty()) {
+                    return null;
+                  }
+                  return selectRepresentativeSchedule(reservation, schedules).id();
+                })
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+
+    // 대표 일정 상세 정보 일괄 조회
+    Map<Long, ScheduleDetailInfo> scheduleDetailMap =
+        scheduleReader.readDetails(representativeScheduleIds);
+
+    return reservations.stream()
+        .map(
+            reservation -> {
+              List<Schedule> schedules =
+                  schedulesByReservationId.getOrDefault(reservation.id(), List.of());
+              if (schedules.isEmpty()) {
+                return MeetingRoomReservationResponse.fromFallback(reservation);
+              }
+
+              Schedule representativeSchedule =
+                  selectRepresentativeSchedule(reservation, schedules);
+              ScheduleDetailInfo scheduleDetail =
+                  scheduleDetailMap.get(representativeSchedule.id());
+              if (scheduleDetail == null) {
+                return MeetingRoomReservationResponse.fromFallback(reservation);
+              }
+
+              return new MeetingRoomReservationResponse(
+                  reservation.id(),
+                  reservation.meetingRoomId(),
+                  reservation.userId(),
+                  reservation.interviewScheduleId(),
+                  scheduleDetail.title(),
+                  scheduleDetail.description(),
+                  scheduleDetail.ownerName(),
+                  scheduleDetail.attendees(),
+                  reservation.startDatetime(),
+                  reservation.endDatetime(),
+                  reservation.status());
+            })
+        .toList();
   }
 
   @Transactional

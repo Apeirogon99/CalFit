@@ -9,6 +9,7 @@ import com.coffiness.calfit.api.fixture.MeetingRoomFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.RecruitmentFixture;
 import com.coffiness.calfit.api.fixture.UserFixture;
+import com.coffiness.calfit.api.support.InterviewApplicantTestHelper;
 import com.coffiness.calfit.api.v1.request.RecruitmentCreateRequest;
 import com.coffiness.calfit.api.v1.request.RecruitmentStageRequest;
 import com.coffiness.calfit.api.v1.response.InterviewAvailabilityResponse;
@@ -16,12 +17,19 @@ import com.coffiness.calfit.api.v1.response.InterviewResponse;
 import com.coffiness.calfit.api.v1.response.InvitationResponse;
 import com.coffiness.calfit.api.v1.response.RecruitmentListResponse;
 import com.coffiness.calfit.core.enums.CareerType;
+import com.coffiness.calfit.core.enums.EntityStatus;
 import com.coffiness.calfit.core.enums.InterviewRound;
 import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.enums.RecruitmentStageType;
 import com.coffiness.calfit.core.enums.ScheduleType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
+import com.coffiness.calfit.storage.db.core.application.ApplicationRepository;
+import com.coffiness.calfit.storage.db.core.config.TenantContext;
+import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateEntity;
+import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
+import com.coffiness.calfit.storage.db.core.user.GroupEntity;
+import com.coffiness.calfit.storage.db.core.user.GroupRepository;
 import com.coffiness.calfit.v1.request.ScheduleCreateRequest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -245,7 +253,10 @@ class GET_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired MeetingRoomFixture meetingRoomFixture,
-      @Autowired InterviewFixture interviewFixture) {
+      @Autowired InterviewFixture interviewFixture,
+      @Autowired GroupRepository groupRepository,
+      @Autowired ApplicationTemplateRepository applicationTemplateRepository,
+      @Autowired ApplicationRepository applicationRepository) {
     MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
@@ -258,12 +269,24 @@ class GET_specs {
     RecruitmentContext recruitment =
         createRecruitment(
             recruitmentFixture,
+            groupRepository,
+            applicationTemplateRepository,
             hrToken,
             tenantId,
             "플랫폼 채용",
             List.of(interviewer.userId()),
             LocalDateTime.of(2030, 3, 1, 9, 0),
             LocalDateTime.of(2030, 3, 31, 18, 0));
+
+    InterviewApplicantTestHelper.createPendingApplication(
+        tenantId,
+        applicationRepository,
+        recruitment.recruitmentId(),
+        recruitment.stageId(),
+        recruitment.applicationTemplateId(),
+        101L,
+        "지원자#101",
+        "availability101@test.com");
 
     LocalDateTime scheduledAt = LocalDateTime.of(2030, 3, 13, 10, 0);
     ApiResponse<InterviewResponse> createResponse =
@@ -318,25 +341,29 @@ class GET_specs {
   // 테스트용 채용 공고와 면접 단계를 생성
   private RecruitmentContext createRecruitment(
       RecruitmentFixture recruitmentFixture,
+      GroupRepository groupRepository,
+      ApplicationTemplateRepository applicationTemplateRepository,
       String token,
       String tenantId,
       String title,
       List<Long> interviewerIds,
       LocalDateTime startDate,
       LocalDateTime endDate) {
+    Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
+    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
     RecruitmentCreateRequest request =
         new RecruitmentCreateRequest(
             title,
             1,
-            1L,
+            applicationTemplateId,
             "채용 공고",
             startDate,
             endDate,
             CareerType.NEW,
             null,
             null,
-            1L,
-            List.of(1L, 2L),
+            leadGroupId,
+            List.of(),
             interviewerIds,
             List.of(new RecruitmentStageRequest("실무 면접", RecruitmentStageType.INTERVIEW, 1)));
 
@@ -350,10 +377,35 @@ class GET_specs {
             .findFirst()
             .orElseThrow();
 
-    return new RecruitmentContext(recruitment.id(), recruitment.stages().get(0).id());
+    return new RecruitmentContext(
+        recruitment.id(), recruitment.stages().get(0).id(), applicationTemplateId);
+  }
+
+  private Long findLeadGroupId(String tenantId, GroupRepository groupRepository) {
+    TenantContext.setTenantId(tenantId);
+    try {
+      return groupRepository.findByStatus(EntityStatus.ACTIVE).stream()
+          .findFirst()
+          .orElseGet(() -> groupRepository.save(GroupEntity.create("면접 가용시간 테스트 그룹", "#3B82F6")))
+          .getId();
+    } finally {
+      TenantContext.clear();
+    }
+  }
+
+  private Long createApplicationTemplate(
+      String tenantId, ApplicationTemplateRepository applicationTemplateRepository) {
+    TenantContext.setTenantId(tenantId);
+    try {
+      return applicationTemplateRepository
+          .save(ApplicationTemplateEntity.create("면접 가용시간 테스트 템플릿", "{}", true))
+          .getId();
+    } finally {
+      TenantContext.clear();
+    }
   }
 
   private record InterviewerContext(Long userId, String token) {}
 
-  private record RecruitmentContext(Long recruitmentId, Long stageId) {}
+  private record RecruitmentContext(Long recruitmentId, Long stageId, Long applicationTemplateId) {}
 }

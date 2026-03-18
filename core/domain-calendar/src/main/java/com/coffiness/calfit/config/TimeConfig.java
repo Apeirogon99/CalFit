@@ -1,6 +1,8 @@
 package com.coffiness.calfit.config;
 
 import java.time.Clock;
+import java.time.ZoneId;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,7 +13,12 @@ import org.springframework.context.annotation.Configuration;
 public class TimeConfig {
 
   @Bean
-  public Clock systemClock() {
-    return Clock.systemDefaultZone();
+  public ZoneId appZoneId(@Value("${app.time-zone:Asia/Seoul}") String timeZone) {
+    return ZoneId.of(timeZone);
+  }
+
+  @Bean
+  public Clock systemClock(ZoneId appZoneId) {
+    return Clock.system(appZoneId);
   }
 }

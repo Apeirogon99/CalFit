@@ -3,6 +3,7 @@ package com.coffiness.calfit.api.recruitment.publish;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
+import com.coffiness.calfit.api.fixture.ApplicationTemplateFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture.WorkspaceContext;
 import com.coffiness.calfit.api.fixture.RecruitmentFixture;
@@ -14,8 +15,6 @@ import com.coffiness.calfit.core.enums.*;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateEntity;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
 import com.coffiness.calfit.storage.db.core.user.GroupEntity;
 import com.coffiness.calfit.storage.db.core.user.GroupRepository;
 import java.time.LocalDateTime;
@@ -34,14 +33,14 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     WorkspaceContext context = memberFixture.setupWorkspace();
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long templateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long templateId = createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     LocalDateTime scheduledStartAt = LocalDateTime.now().plusDays(2);
 
     Long recruitmentId =
@@ -70,14 +69,14 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     WorkspaceContext context = memberFixture.setupWorkspace();
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long templateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long templateId = createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     InterviewerContext interviewer =
         inviteInterviewer(memberFixture, userFixture, tenantId, hrToken, "수동 게시 권한 없음");
 
@@ -100,14 +99,14 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     WorkspaceContext context = memberFixture.setupWorkspace();
     String hrToken = context.hrToken();
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long templateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long templateId = createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
 
     Long recruitmentId =
         createRecruitment(
@@ -195,15 +194,8 @@ public class PATCH_specs {
   }
 
   private Long createApplicationTemplate(
-      String tenantId, ApplicationTemplateRepository applicationTemplateRepository) {
-    TenantContext.setTenantId(tenantId);
-    try {
-      return applicationTemplateRepository
-          .save(ApplicationTemplateEntity.create("즉시 게시 테스트 템플릿", "{}", true))
-          .getId();
-    } finally {
-      TenantContext.clear();
-    }
+      String token, String tenantId, ApplicationTemplateFixture applicationTemplateFixture) {
+    return applicationTemplateFixture.createUsedTemplateId(token, tenantId, "recruitment-publish");
   }
 
   private InterviewerContext inviteInterviewer(

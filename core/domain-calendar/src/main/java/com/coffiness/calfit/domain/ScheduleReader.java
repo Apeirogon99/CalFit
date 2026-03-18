@@ -27,9 +27,15 @@ public interface ScheduleReader {
 
   List<Schedule> findByReservationId(Long reservationId);
 
+  List<Schedule> findByReservationIds(List<Long> reservationIds);
+
   List<Long> readAttendeeIds(Long scheduleId);
 
+  Map<Long, List<Long>> readAttendeeIdsByScheduleIds(List<Long> scheduleIds);
+
   ScheduleDetailInfo readDetail(Long scheduleId);
+
+  Map<Long, ScheduleDetailInfo> readDetails(List<Long> scheduleIds);
 
   // 선택한 참석자들의 일정 현황을 조회
   ScheduleAvailability readAttendeeAvailability(

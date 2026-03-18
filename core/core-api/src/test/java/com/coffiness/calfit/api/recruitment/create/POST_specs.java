@@ -3,6 +3,7 @@ package com.coffiness.calfit.api.recruitment.create;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
+import com.coffiness.calfit.api.fixture.ApplicationTemplateFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.RecruitmentFixture;
 import com.coffiness.calfit.api.fixture.UserFixture;
@@ -15,8 +16,6 @@ import com.coffiness.calfit.core.enums.RecruitmentStageType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateEntity;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
 import com.coffiness.calfit.storage.db.core.user.GroupEntity;
 import com.coffiness.calfit.storage.db.core.user.GroupRepository;
 import java.time.LocalDateTime;
@@ -35,7 +34,7 @@ public class POST_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
@@ -43,7 +42,8 @@ public class POST_specs {
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(token).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(token, tenantId, applicationTemplateFixture);
     RecruitmentCreateRequest request =
         createRequest(applicationTemplateId, leadGroupId, List.of(hrUserId));
 
@@ -60,7 +60,7 @@ public class POST_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
@@ -68,7 +68,8 @@ public class POST_specs {
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     InterviewerContext interviewer =
         inviteInterviewer(memberFixture, userFixture, tenantId, hrToken);
     RecruitmentCreateRequest request =
@@ -124,15 +125,8 @@ public class POST_specs {
 
   // 현재 tenant에서 사용할 지원서 템플릿을 생성
   private Long createApplicationTemplate(
-      String tenantId, ApplicationTemplateRepository applicationTemplateRepository) {
-    TenantContext.setTenantId(tenantId);
-    try {
-      return applicationTemplateRepository
-          .save(ApplicationTemplateEntity.create("생성 테스트 템플릿", "{}", true))
-          .getId();
-    } finally {
-      TenantContext.clear();
-    }
+      String token, String tenantId, ApplicationTemplateFixture applicationTemplateFixture) {
+    return applicationTemplateFixture.createUsedTemplateId(token, tenantId, "recruitment-create");
   }
 
   // 면접관 멤버를 초대하고 로그인 가능한 토큰을 반환

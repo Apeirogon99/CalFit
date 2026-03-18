@@ -13,10 +13,8 @@ import com.coffiness.calfit.core.support.response.ResultType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 
 @CalfitApiTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @DisplayName("PUT /api/v1/announcement-boards/{boardId}")
 class PUT_specs {
 
@@ -74,6 +72,70 @@ class PUT_specs {
         announcementBoardFixture.update(token, tenantId, 99999L, "공지 B", "내용 B", true);
 
     // Assert
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 제목이_없으면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+    long boardId =
+        createBoardAndGetId(announcementBoardFixture, token, tenantId, "공지 A", "내용 A", false);
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.update(token, tenantId, boardId, null, "내용 B", true);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 제목이_한글자면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+    long boardId =
+        createBoardAndGetId(announcementBoardFixture, token, tenantId, "공지 A", "내용 A", false);
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.update(token, tenantId, boardId, "공", "내용 B", true);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 제목이_100자를_초과하면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+    long boardId =
+        createBoardAndGetId(announcementBoardFixture, token, tenantId, "공지 A", "내용 A", false);
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.update(token, tenantId, boardId, "가".repeat(101), "내용 B", true);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 내용이_없으면_400을_반환한다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+    long boardId =
+        createBoardAndGetId(announcementBoardFixture, token, tenantId, "공지 A", "내용 A", false);
+
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.update(token, tenantId, boardId, "공지 B", null, true);
+
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
   }
 
@@ -139,6 +201,26 @@ class PUT_specs {
     assertThat(response.getData()).isNotNull();
     assertThat(response.getData().id()).isEqualTo(targetBoardId);
     assertThat(response.getData().title()).isEqualTo(duplicatedTitle);
+  }
+
+  @Test
+  void 수정하면_상세_조회에도_변경사항이_반영된다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired AnnouncementBoardFixture announcementBoardFixture) {
+    MemberFixture.WorkspaceContext context = memberFixture.setupWorkspace();
+    String token = context.hrToken();
+    String tenantId = context.workspaceId();
+    long boardId =
+        createBoardAndGetId(announcementBoardFixture, token, tenantId, "수정 전", "수정 전 내용", false);
+
+    announcementBoardFixture.update(token, tenantId, boardId, "수정 후", "수정 후 내용", true);
+    ApiResponse<AnnouncementBoardResponse> response =
+        announcementBoardFixture.detail(token, tenantId, boardId);
+
+    assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
+    assertThat(response.getData().title()).isEqualTo("수정 후");
+    assertThat(response.getData().content()).isEqualTo("수정 후 내용");
+    assertThat(response.getData().pinned()).isTrue();
   }
 
   private long createBoardAndGetId(

@@ -3,6 +3,7 @@ package com.coffiness.calfit.api.recruitment.interviewers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
+import com.coffiness.calfit.api.fixture.ApplicationTemplateFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture;
 import com.coffiness.calfit.api.fixture.MemberFixture.WorkspaceContext;
 import com.coffiness.calfit.api.fixture.RecruitmentFixture;
@@ -13,12 +14,13 @@ import com.coffiness.calfit.api.v1.response.RecruitmentDetailResponse;
 import com.coffiness.calfit.core.enums.CareerType;
 import com.coffiness.calfit.core.enums.EntityStatus;
 import com.coffiness.calfit.core.enums.MemberType;
+import com.coffiness.calfit.core.enums.RecruitmentActionType;
 import com.coffiness.calfit.core.enums.RecruitmentStageType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.core.support.response.ResultType;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateEntity;
-import com.coffiness.calfit.storage.db.core.template.ApplicationTemplateRepository;
+import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentHistoryEntity;
+import com.coffiness.calfit.storage.db.core.recruitment.RecruitmentHistoryRepository;
 import com.coffiness.calfit.storage.db.core.user.GroupEntity;
 import com.coffiness.calfit.storage.db.core.user.GroupRepository;
 import java.time.LocalDateTime;
@@ -38,7 +40,7 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     WorkspaceContext context = memberFixture.setupWorkspace();
@@ -46,7 +48,8 @@ public class PATCH_specs {
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     InterviewerContext interviewer =
         inviteInterviewer(memberFixture, userFixture, tenantId, hrToken, "추가 면접관");
     Long recruitmentId =
@@ -74,7 +77,7 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     WorkspaceContext context = memberFixture.setupWorkspace();
@@ -82,7 +85,8 @@ public class PATCH_specs {
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     InterviewerContext interviewer =
         inviteInterviewer(memberFixture, userFixture, tenantId, hrToken, "권한 없는 면접관");
     Long recruitmentId =
@@ -107,7 +111,7 @@ public class PATCH_specs {
       @Autowired UserFixture userFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
       @Autowired GroupRepository groupRepository,
-      @Autowired ApplicationTemplateRepository applicationTemplateRepository) {
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     WorkspaceContext context = memberFixture.setupWorkspace();
@@ -115,7 +119,8 @@ public class PATCH_specs {
     String tenantId = context.workspaceId();
     Long hrUserId = userFixture.me(hrToken).getData().id();
     Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
-    Long applicationTemplateId = createApplicationTemplate(tenantId, applicationTemplateRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
     Long recruitmentId =
         createRecruitment(
             recruitmentFixture, hrToken, tenantId, applicationTemplateId, leadGroupId, hrUserId);
@@ -127,6 +132,82 @@ public class PATCH_specs {
 
     // Assert
     assertThat(response.getResult()).isEqualTo(ResultType.ERROR);
+  }
+
+  @Test
+  void 면접관_추가_및_해제시_history_changeLog에_대상_id를_남긴다(
+      @Autowired MemberFixture memberFixture,
+      @Autowired UserFixture userFixture,
+      @Autowired RecruitmentFixture recruitmentFixture,
+      @Autowired GroupRepository groupRepository,
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture,
+      @Autowired RecruitmentHistoryRepository recruitmentHistoryRepository) {
+
+    WorkspaceContext context = memberFixture.setupWorkspace();
+    String hrToken = context.hrToken();
+    String tenantId = context.workspaceId();
+    Long hrUserId = userFixture.me(hrToken).getData().id();
+    Long leadGroupId = findLeadGroupId(tenantId, groupRepository);
+    Long applicationTemplateId =
+        createApplicationTemplate(hrToken, tenantId, applicationTemplateFixture);
+    Long recruitmentId =
+        createRecruitment(
+            recruitmentFixture, hrToken, tenantId, applicationTemplateId, leadGroupId, hrUserId);
+
+    InterviewerContext newInterviewer =
+        inviteInterviewer(memberFixture, userFixture, tenantId, hrToken, "교체 면접관");
+
+    ApiResponse<RecruitmentDetailResponse> response =
+        recruitmentFixture.updateRecruitmentInterviewers(
+            hrToken,
+            tenantId,
+            recruitmentId,
+            Map.of("interviewerIds", List.of(newInterviewer.userId())));
+
+    assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
+
+    List<RecruitmentHistoryEntity> histories =
+        readRecruitmentHistories(tenantId, recruitmentHistoryRepository, recruitmentId);
+
+    assertThat(histories)
+        .extracting(RecruitmentHistoryEntity::getRecruitmentActionType)
+        .contains(RecruitmentActionType.INTERVIEWER_ADDED)
+        .contains(RecruitmentActionType.INTERVIEWER_REMOVED);
+
+    assertThat(histories)
+        .filteredOn(
+            history ->
+                history.getRecruitmentActionType() == RecruitmentActionType.INTERVIEWER_ADDED)
+        .singleElement()
+        .satisfies(
+            history -> {
+              @SuppressWarnings("unchecked")
+              Map<String, Object> changeLog = (Map<String, Object>) history.getChangeLog();
+              assertThat(changeLog)
+                  .containsEntry("scope", "INTERVIEWER")
+                  .containsEntry("changedFields", List.of("interviewerIds"));
+              assertThat(extractInterviewerIds(changeLog, "before")).containsExactly(hrUserId);
+              assertThat(extractInterviewerIds(changeLog, "after"))
+                  .containsExactly(hrUserId, newInterviewer.userId());
+            });
+
+    assertThat(histories)
+        .filteredOn(
+            history ->
+                history.getRecruitmentActionType() == RecruitmentActionType.INTERVIEWER_REMOVED)
+        .singleElement()
+        .satisfies(
+            history -> {
+              @SuppressWarnings("unchecked")
+              Map<String, Object> changeLog = (Map<String, Object>) history.getChangeLog();
+              assertThat(changeLog)
+                  .containsEntry("scope", "INTERVIEWER")
+                  .containsEntry("changedFields", List.of("interviewerIds"));
+              assertThat(extractInterviewerIds(changeLog, "before"))
+                  .containsExactly(hrUserId, newInterviewer.userId());
+              assertThat(extractInterviewerIds(changeLog, "after"))
+                  .containsExactly(newInterviewer.userId());
+            });
   }
 
   // 테스트용 게시된 공고를 하나 생성
@@ -183,15 +264,9 @@ public class PATCH_specs {
 
   // 현재 tenant에서 사용할 지원서 템플릿을 생성
   private Long createApplicationTemplate(
-      String tenantId, ApplicationTemplateRepository applicationTemplateRepository) {
-    TenantContext.setTenantId(tenantId);
-    try {
-      return applicationTemplateRepository
-          .save(ApplicationTemplateEntity.create("면접관 수정 테스트 템플릿", "{}", true))
-          .getId();
-    } finally {
-      TenantContext.clear();
-    }
+      String token, String tenantId, ApplicationTemplateFixture applicationTemplateFixture) {
+    return applicationTemplateFixture.createUsedTemplateId(
+        token, tenantId, "recruitment-interviewers");
   }
 
   // 면접관 멤버를 초대하고 토큰과 userId를 함께 반환
@@ -214,6 +289,25 @@ public class PATCH_specs {
     memberFixture.acceptInvitation(invitationToken, token);
 
     return new InterviewerContext(token, userId);
+  }
+
+  private List<RecruitmentHistoryEntity> readRecruitmentHistories(
+      String tenantId,
+      RecruitmentHistoryRepository recruitmentHistoryRepository,
+      Long recruitmentId) {
+    TenantContext.setTenantId(tenantId);
+    try {
+      return recruitmentHistoryRepository.findByRecruitmentIdOrderByCreatedAtAsc(recruitmentId);
+    } finally {
+      TenantContext.clear();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Long> extractInterviewerIds(Map<String, Object> changeLog, String key) {
+    Map<String, Object> snapshot = (Map<String, Object>) changeLog.get(key);
+    return ((List<?>) snapshot.get("interviewerIds"))
+        .stream().map(Number.class::cast).map(Number::longValue).toList();
   }
 
   private record InterviewerContext(String token, Long userId) {}

@@ -39,10 +39,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @DisplayName("POST /api/v1/calendars/google/connect")
 public class POST_specs {
 
+  private static final ZoneId APP_ZONE_ID = ZoneId.of("Asia/Seoul");
+  private static final LocalDateTime FIXED_TIME = LocalDateTime.of(2026, 3, 17, 10, 0);
+
   @MockitoBean private GoogleOAuthPort googleOAuthPort;
   @MockitoBean private GoogleCalendarPort googleCalendarPort;
 
-  private final CalendarSyncPolicy calendarSyncPolicy = new CalendarSyncPolicy();
+  private final CalendarSyncPolicy calendarSyncPolicy = new CalendarSyncPolicy(APP_ZONE_ID);
 
   @Test
   void 올바른_인가코드로_요청하면_캘린더_연동에_성공한다(
@@ -157,8 +160,8 @@ public class POST_specs {
   @Test
   void 구글_updatedAt이_없으면_일정을_반영한다() {
     // Arrange
-    LocalDateTime calfitUpdatedAt = LocalDateTime.now();
-    LocalDateTime lastCalfitPushedAt = LocalDateTime.now();
+    LocalDateTime calfitUpdatedAt = FIXED_TIME;
+    LocalDateTime lastCalfitPushedAt = FIXED_TIME;
 
     // Act
     CalendarSyncDecision decision =
@@ -172,10 +175,10 @@ public class POST_specs {
   @Test
   void calfit_푸시_직후_구글_변경은_에코로_무시한다() {
     // Arrange
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = FIXED_TIME;
     LocalDateTime calfitUpdatedAt = now;
     LocalDateTime lastCalfitPushedAt = now;
-    ZonedDateTime googleUpdatedAt = now.plusSeconds(30).atZone(ZoneId.systemDefault());
+    ZonedDateTime googleUpdatedAt = now.plusSeconds(30).atZone(APP_ZONE_ID);
 
     // Act
     CalendarSyncDecision decision =
@@ -191,8 +194,7 @@ public class POST_specs {
   void calfit_updatedAt이_없으면_구글_일정을_반영한다() {
     // Arrange
     LocalDateTime lastCalfitPushedAt = null;
-    ZonedDateTime googleUpdatedAt =
-        LocalDateTime.now().plusMinutes(5).atZone(ZoneId.systemDefault());
+    ZonedDateTime googleUpdatedAt = FIXED_TIME.plusMinutes(5).atZone(APP_ZONE_ID);
 
     // Act
     CalendarSyncDecision decision =
@@ -206,9 +208,9 @@ public class POST_specs {
   @Test
   void 구글이_명확히_최신이_아니면_일정을_무시한다() {
     // Arrange
-    LocalDateTime calfitUpdatedAt = LocalDateTime.now();
+    LocalDateTime calfitUpdatedAt = FIXED_TIME;
     LocalDateTime lastCalfitPushedAt = null;
-    ZonedDateTime googleUpdatedAt = calfitUpdatedAt.plusSeconds(3).atZone(ZoneId.systemDefault());
+    ZonedDateTime googleUpdatedAt = calfitUpdatedAt.plusSeconds(3).atZone(APP_ZONE_ID);
 
     // Act
     CalendarSyncDecision decision =
@@ -223,9 +225,9 @@ public class POST_specs {
   @Test
   void 구글이_충분히_최신이면_일정을_반영한다() {
     // Arrange
-    LocalDateTime calfitUpdatedAt = LocalDateTime.now();
+    LocalDateTime calfitUpdatedAt = FIXED_TIME;
     LocalDateTime lastCalfitPushedAt = null;
-    ZonedDateTime googleUpdatedAt = calfitUpdatedAt.plusSeconds(8).atZone(ZoneId.systemDefault());
+    ZonedDateTime googleUpdatedAt = calfitUpdatedAt.plusSeconds(8).atZone(APP_ZONE_ID);
 
     // Act
     CalendarSyncDecision decision =

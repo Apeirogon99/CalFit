@@ -30,9 +30,10 @@ public class AdminDashboardController {
   }
 
   @GetMapping("/revenue-cost-trend")
-  public ApiResponse<RevenueCostTrendResponse> getRevenueCostTrend() {
+  public ApiResponse<RevenueCostTrendResponse> getRevenueCostTrend(
+      @RequestParam(defaultValue = "monthly") String period) {
     return ApiResponse.success(
-        RevenueCostTrendResponse.from(dashboardService.getRevenueCostTrend()));
+        RevenueCostTrendResponse.from(dashboardService.getRevenueCostTrend(period)));
   }
 
   @GetMapping("/plan-distribution")

@@ -25,6 +25,30 @@ include::{snippets}/users/signup/response-fields.adoc[]
 
 '''
 
+=== Resend Verification Email
+==== Curl Request
+include::{snippets}/users/resend-verification/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/users/resend-verification/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/users/resend-verification/http-response.adoc[]
+==== Response Fields
+include::{snippets}/users/resend-verification/response-fields.adoc[]
+
+'''
+
+=== Verify Signup Email
+==== Curl Request
+include::{snippets}/users/signup-verify/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/users/signup-verify/query-parameters.adoc[]
+==== Response Headers
+include::{snippets}/users/signup-verify/response-headers.adoc[]
+==== Http Response
+include::{snippets}/users/signup-verify/http-response.adoc[]
+
+'''
+
 === User Login
 ==== Curl Request
 include::{snippets}/users/login/curl-request.adoc[]
@@ -44,6 +68,16 @@ include::{snippets}/users/me/curl-request.adoc[]
 include::{snippets}/users/me/http-response.adoc[]
 ==== Response Fields
 include::{snippets}/users/me/response-fields.adoc[]
+
+'''
+
+=== Get My Workspace
+==== Curl Request
+include::{snippets}/users/me-workspace/curl-request.adoc[]
+==== Http Response
+include::{snippets}/users/me-workspace/http-response.adoc[]
+==== Response Fields
+include::{snippets}/users/me-workspace/response-fields.adoc[]
 
 '''
 
@@ -83,14 +117,880 @@ include::{snippets}/applicants/login/response-fields.adoc[]
 
 '''
 
-== Votes API
+== Application Templates API
 
-=== Vote Create
+=== Get Application Templates
 ==== Curl Request
-include::{snippets}/votes/curl-request.adoc[]
-==== Request Fields
-include::{snippets}/votes/request-fields.adoc[]
+include::{snippets}/application-templates/list/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/application-templates/list/path-parameters.adoc[]
 ==== Http Response
-include::{snippets}/votes/http-response.adoc[]
+include::{snippets}/application-templates/list/http-response.adoc[]
 ==== Response Fields
-include::{snippets}/votes/response-fields.adoc[]
+include::{snippets}/application-templates/list/response-fields.adoc[]
+
+'''
+
+=== Create Application Template
+==== Curl Request
+include::{snippets}/application-templates/create/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/application-templates/create/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/application-templates/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/application-templates/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/application-templates/create/response-fields.adoc[]
+
+'''
+
+=== Update Application Template
+==== Curl Request
+include::{snippets}/application-templates/update/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/application-templates/update/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/application-templates/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/application-templates/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/application-templates/update/response-fields.adoc[]
+
+'''
+
+=== Update Application Template Status
+==== Curl Request
+include::{snippets}/application-templates/status/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/application-templates/status/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/application-templates/status/request-fields.adoc[]
+==== Http Response
+include::{snippets}/application-templates/status/http-response.adoc[]
+==== Response Fields
+include::{snippets}/application-templates/status/response-fields.adoc[]
+
+'''
+
+=== Delete Application Template
+==== Curl Request
+include::{snippets}/application-templates/delete/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/application-templates/delete/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/application-templates/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/application-templates/delete/response-fields.adoc[]
+
+'''
+
+== Applications API
+
+=== Export Applicants Excel
+==== Curl Request
+include::{snippets}/applications/excel-export/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/applications/excel-export/query-parameters.adoc[]
+==== Response Headers
+include::{snippets}/applications/excel-export/response-headers.adoc[]
+==== Http Response
+include::{snippets}/applications/excel-export/http-response.adoc[]
+
+'''
+
+== Members API
+
+=== Get Members
+==== Curl Request
+include::{snippets}/members/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/members/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/list/response-fields.adoc[]
+
+'''
+
+=== Get My Member
+==== Curl Request
+include::{snippets}/members/me/curl-request.adoc[]
+==== Http Response
+include::{snippets}/members/me/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/me/response-fields.adoc[]
+
+'''
+
+=== Update Member
+==== Curl Request
+include::{snippets}/members/update/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/members/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/members/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/update/response-fields.adoc[]
+
+'''
+
+=== Delete Member
+==== Curl Request
+include::{snippets}/members/delete/curl-request.adoc[]
+==== Http Response
+include::{snippets}/members/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/delete/response-fields.adoc[]
+
+'''
+
+=== Leave Workspace
+==== Curl Request
+include::{snippets}/members/leave-workspace/curl-request.adoc[]
+==== Http Response
+include::{snippets}/members/leave-workspace/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/leave-workspace/response-fields.adoc[]
+
+'''
+
+=== Assign Group to Member
+==== Curl Request
+include::{snippets}/members/assign-group/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/members/assign-group/request-fields.adoc[]
+==== Http Response
+include::{snippets}/members/assign-group/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/assign-group/response-fields.adoc[]
+
+'''
+
+=== Leave Group
+==== Curl Request
+include::{snippets}/members/leave-group/curl-request.adoc[]
+==== Http Response
+include::{snippets}/members/leave-group/http-response.adoc[]
+==== Response Fields
+include::{snippets}/members/leave-group/response-fields.adoc[]
+
+'''
+
+== Groups API
+
+=== Get Groups
+==== Curl Request
+include::{snippets}/groups/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/groups/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/groups/list/response-fields.adoc[]
+
+'''
+
+=== Get Group Detail
+==== Curl Request
+include::{snippets}/groups/detail/curl-request.adoc[]
+==== Http Response
+include::{snippets}/groups/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/groups/detail/response-fields.adoc[]
+
+'''
+
+=== Create Group
+==== Curl Request
+include::{snippets}/groups/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/groups/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/groups/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/groups/create/response-fields.adoc[]
+
+'''
+
+=== Update Group
+==== Curl Request
+include::{snippets}/groups/update/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/groups/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/groups/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/groups/update/response-fields.adoc[]
+
+'''
+
+=== Delete Group
+==== Curl Request
+include::{snippets}/groups/delete/curl-request.adoc[]
+==== Http Response
+include::{snippets}/groups/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/groups/delete/response-fields.adoc[]
+
+'''
+
+== Workspaces API
+
+=== Create Workspace
+==== Curl Request
+include::{snippets}/workspaces/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/workspaces/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/workspaces/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/workspaces/create/response-fields.adoc[]
+
+'''
+
+== Announcements API
+
+=== Create Announcement
+==== Curl Request
+include::{snippets}/announcements/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/announcements/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/announcements/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/announcements/create/response-fields.adoc[]
+
+'''
+
+=== Get Announcement List
+==== Curl Request
+include::{snippets}/announcements/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/announcements/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/announcements/list/response-fields.adoc[]
+
+'''
+
+=== Get Announcement Detail
+==== Curl Request
+include::{snippets}/announcements/detail/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/announcements/detail/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/announcements/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/announcements/detail/response-fields.adoc[]
+
+'''
+
+=== Update Announcement
+==== Curl Request
+include::{snippets}/announcements/update/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/announcements/update/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/announcements/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/announcements/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/announcements/update/response-fields.adoc[]
+
+'''
+
+=== Delete Announcement
+==== Curl Request
+include::{snippets}/announcements/delete/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/announcements/delete/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/announcements/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/announcements/delete/response-fields.adoc[]
+
+'''
+
+== Meeting Rooms API
+
+=== Create Meeting Room
+==== Curl Request
+include::{snippets}/meeting-rooms/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/meeting-rooms/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/create/response-fields.adoc[]
+
+'''
+
+=== Get Meeting Room List
+==== Curl Request
+include::{snippets}/meeting-rooms/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/list/response-fields.adoc[]
+
+'''
+
+=== Update Meeting Room
+==== Curl Request
+include::{snippets}/meeting-rooms/update/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/meeting-rooms/update/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/meeting-rooms/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/update/response-fields.adoc[]
+
+'''
+
+=== Delete Meeting Room
+==== Curl Request
+include::{snippets}/meeting-rooms/delete/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/meeting-rooms/delete/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/delete/response-fields.adoc[]
+
+'''
+
+=== Get Meeting Room Reservations
+==== Curl Request
+include::{snippets}/meeting-rooms/reservations/list/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/meeting-rooms/reservations/list/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/reservations/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/reservations/list/response-fields.adoc[]
+
+'''
+
+=== Reserve Meeting Room
+==== Curl Request
+include::{snippets}/meeting-rooms/reservations/create/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/meeting-rooms/reservations/create/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/meeting-rooms/reservations/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/reservations/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/reservations/create/response-fields.adoc[]
+
+'''
+
+=== Cancel Meeting Room Reservation
+==== Curl Request
+include::{snippets}/meeting-rooms/reservations/cancel/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/meeting-rooms/reservations/cancel/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/meeting-rooms/reservations/cancel/http-response.adoc[]
+==== Response Fields
+include::{snippets}/meeting-rooms/reservations/cancel/response-fields.adoc[]
+
+'''
+
+== Interviews API
+
+=== Get Interview Availability
+==== Curl Request
+include::{snippets}/interviews/availability/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/interviews/availability/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/interviews/availability/http-response.adoc[]
+==== Response Fields
+include::{snippets}/interviews/availability/response-fields.adoc[]
+
+'''
+
+=== Get Pending Interview Applicants
+==== Curl Request
+include::{snippets}/interviews/pending-applicants/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/interviews/pending-applicants/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/interviews/pending-applicants/http-response.adoc[]
+==== Response Fields
+include::{snippets}/interviews/pending-applicants/response-fields.adoc[]
+
+'''
+
+=== Create Interview
+==== Curl Request
+include::{snippets}/interviews/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/interviews/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/interviews/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/interviews/create/response-fields.adoc[]
+
+'''
+
+== Recruitments API
+
+=== Create Recruitment
+==== Curl Request
+include::{snippets}/recruitments/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/recruitments/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/recruitments/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/create/response-fields.adoc[]
+
+'''
+
+=== Get Recruitment List
+==== Curl Request
+include::{snippets}/recruitments/list/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/recruitments/list/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/list/response-fields.adoc[]
+
+'''
+
+=== Get Recruitment Detail
+==== Curl Request
+include::{snippets}/recruitments/detail/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/detail/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/detail/response-fields.adoc[]
+
+'''
+
+=== Get Recruitment Interview Schedules
+==== Curl Request
+include::{snippets}/recruitments/interview-schedules/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/interview-schedules/path-parameters.adoc[]
+==== Query Parameters
+include::{snippets}/recruitments/interview-schedules/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/interview-schedules/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/interview-schedules/response-fields.adoc[]
+
+'''
+
+=== Get Weekly Interview Schedules
+==== Curl Request
+include::{snippets}/recruitments/weekly-interview-schedules/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/recruitments/weekly-interview-schedules/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/weekly-interview-schedules/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/weekly-interview-schedules/response-fields.adoc[]
+
+'''
+
+=== Update Recruitment
+==== Curl Request
+include::{snippets}/recruitments/update/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/update/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/recruitments/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/recruitments/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/update/response-fields.adoc[]
+
+'''
+
+=== Update Recruitment Interviewers
+==== Curl Request
+include::{snippets}/recruitments/update-interviewers/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/update-interviewers/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/recruitments/update-interviewers/request-fields.adoc[]
+==== Http Response
+include::{snippets}/recruitments/update-interviewers/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/update-interviewers/response-fields.adoc[]
+
+'''
+
+=== Publish Recruitment
+==== Curl Request
+include::{snippets}/recruitments/publish/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/publish/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/publish/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/publish/response-fields.adoc[]
+
+'''
+
+=== Delete Recruitment
+==== Curl Request
+include::{snippets}/recruitments/delete/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/recruitments/delete/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/recruitments/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/recruitments/delete/response-fields.adoc[]
+
+'''
+
+== Calendar API
+
+=== Create Schedule
+==== Curl Request
+include::{snippets}/schedules/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/schedules/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/schedules/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/create/response-fields.adoc[]
+
+'''
+
+=== Sync Schedule
+==== Curl Request
+include::{snippets}/schedules/sync/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/schedules/sync/request-fields.adoc[]
+==== Http Response
+include::{snippets}/schedules/sync/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/sync/response-fields.adoc[]
+
+'''
+
+=== Get Schedules
+==== Curl Request
+include::{snippets}/schedules/list/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/schedules/list/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/schedules/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/list/response-fields.adoc[]
+
+'''
+
+=== Get Attendee Availability
+==== Curl Request
+include::{snippets}/schedules/availability/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/schedules/availability/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/schedules/availability/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/availability/response-fields.adoc[]
+
+'''
+
+=== Get Attendee Availability Range
+==== Curl Request
+include::{snippets}/schedules/availability-range/curl-request.adoc[]
+==== Query Parameters
+include::{snippets}/schedules/availability-range/query-parameters.adoc[]
+==== Http Response
+include::{snippets}/schedules/availability-range/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/availability-range/response-fields.adoc[]
+
+'''
+
+=== Get Schedule Detail
+==== Curl Request
+include::{snippets}/schedules/detail/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/schedules/detail/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/schedules/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/detail/response-fields.adoc[]
+
+'''
+
+=== Update Schedule
+==== Curl Request
+include::{snippets}/schedules/update/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/schedules/update/path-parameters.adoc[]
+==== Request Fields
+include::{snippets}/schedules/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/schedules/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/update/response-fields.adoc[]
+
+'''
+
+=== Delete Schedule
+==== Curl Request
+include::{snippets}/schedules/delete/curl-request.adoc[]
+==== Path Parameters
+include::{snippets}/schedules/delete/path-parameters.adoc[]
+==== Http Response
+include::{snippets}/schedules/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/schedules/delete/response-fields.adoc[]
+
+'''
+
+== Payments API
+
+=== Get Toss Config
+==== Curl Request
+include::{snippets}/payments/toss-config/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/toss-config/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/toss-config/response-fields.adoc[]
+
+'''
+
+=== Register Billing Key
+==== Curl Request
+include::{snippets}/payments/billing-key/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/payments/billing-key/request-fields.adoc[]
+==== Http Response
+include::{snippets}/payments/billing-key/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/billing-key/response-fields.adoc[]
+
+'''
+
+=== Upgrade to Enterprise
+==== Curl Request
+include::{snippets}/payments/upgrade/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/upgrade/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/upgrade/response-fields.adoc[]
+
+'''
+
+=== Downgrade to Free
+==== Curl Request
+include::{snippets}/payments/downgrade/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/downgrade/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/downgrade/response-fields.adoc[]
+
+'''
+
+=== Get Registered Card
+==== Curl Request
+include::{snippets}/payments/card/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/card/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/card/response-fields.adoc[]
+
+'''
+
+=== Get Subscription
+==== Curl Request
+include::{snippets}/payments/subscription/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/subscription/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/subscription/response-fields.adoc[]
+
+'''
+
+=== Get Payment History
+==== Curl Request
+include::{snippets}/payments/history/curl-request.adoc[]
+==== Http Response
+include::{snippets}/payments/history/http-response.adoc[]
+==== Response Fields
+include::{snippets}/payments/history/response-fields.adoc[]
+
+'''
+
+== Admin - Costs API
+
+=== Get Cost Summary
+==== Curl Request
+include::{snippets}/admin/costs/summary/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/summary/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/summary/response-fields.adoc[]
+
+'''
+
+=== Get Cost Trend
+==== Curl Request
+include::{snippets}/admin/costs/trend/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/trend/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/trend/response-fields.adoc[]
+
+'''
+
+=== Get Costs
+==== Curl Request
+include::{snippets}/admin/costs/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/list/response-fields.adoc[]
+
+'''
+
+=== Create Cost
+==== Curl Request
+include::{snippets}/admin/costs/create/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/admin/costs/create/request-fields.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/create/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/create/response-fields.adoc[]
+
+'''
+
+=== Update Cost
+==== Curl Request
+include::{snippets}/admin/costs/update/curl-request.adoc[]
+==== Request Fields
+include::{snippets}/admin/costs/update/request-fields.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/update/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/update/response-fields.adoc[]
+
+'''
+
+=== Delete Cost
+==== Curl Request
+include::{snippets}/admin/costs/delete/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/costs/delete/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/costs/delete/response-fields.adoc[]
+
+'''
+
+== Admin - Dashboard API
+
+=== Get Dashboard Summary
+==== Curl Request
+include::{snippets}/admin/dashboard/summary/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/dashboard/summary/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/dashboard/summary/response-fields.adoc[]
+
+'''
+
+=== Get Revenue Cost Trend
+==== Curl Request
+include::{snippets}/admin/dashboard/revenue-cost-trend/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/dashboard/revenue-cost-trend/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/dashboard/revenue-cost-trend/response-fields.adoc[]
+
+'''
+
+=== Get Plan Distribution
+==== Curl Request
+include::{snippets}/admin/dashboard/plan-distribution/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/dashboard/plan-distribution/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/dashboard/plan-distribution/response-fields.adoc[]
+
+'''
+
+== Admin - Invoices API
+
+=== Get Invoice Summary
+==== Curl Request
+include::{snippets}/admin/invoices/summary/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/invoices/summary/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/invoices/summary/response-fields.adoc[]
+
+'''
+
+=== Get Invoice Detail
+==== Curl Request
+include::{snippets}/admin/invoices/detail/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/invoices/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/invoices/detail/response-fields.adoc[]
+
+'''
+
+=== Get Invoices
+==== Curl Request
+include::{snippets}/admin/invoices/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/invoices/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/invoices/list/response-fields.adoc[]
+
+'''
+
+== Admin - PnL API
+
+=== Get PnL Summary
+==== Curl Request
+include::{snippets}/admin/pnl/summary/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/pnl/summary/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/pnl/summary/response-fields.adoc[]
+
+'''
+
+=== Get PnL Report
+==== Curl Request
+include::{snippets}/admin/pnl/report/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/pnl/report/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/pnl/report/response-fields.adoc[]
+
+'''
+
+== Admin - Subscriptions API
+
+=== Get Subscriptions
+==== Curl Request
+include::{snippets}/admin/subscriptions/list/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/subscriptions/list/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/subscriptions/list/response-fields.adoc[]
+
+'''
+
+=== Get Subscription Detail
+==== Curl Request
+include::{snippets}/admin/subscriptions/detail/curl-request.adoc[]
+==== Http Response
+include::{snippets}/admin/subscriptions/detail/http-response.adoc[]
+==== Response Fields
+include::{snippets}/admin/subscriptions/detail/response-fields.adoc[]

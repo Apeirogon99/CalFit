@@ -5,16 +5,19 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /*
  * 구글 -> Calfit 동기화 반영 여부를 판단하는 정책 클래스
  * */
 @Component
+@RequiredArgsConstructor
 public class CalendarSyncPolicy {
 
   private static final Duration ECHO_GUARD_WINDOW = Duration.ofSeconds(90);
   private static final Duration CLOCK_SKEW_TOLERANCE = Duration.ofSeconds(5);
+  private final ZoneId appZoneId;
 
   public CalendarSyncDecision decideGoogleToCalfit(
       LocalDateTime calfitUpdatedAt,
@@ -49,7 +52,7 @@ public class CalendarSyncPolicy {
   }
 
   private LocalDateTime toServerLocalTime(ZonedDateTime googleUpdatedAt) {
-    return googleUpdatedAt.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+    return googleUpdatedAt.withZoneSameInstant(appZoneId).toLocalDateTime();
   }
 
   private boolean isEchoFromCalfit(

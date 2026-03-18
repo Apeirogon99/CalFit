@@ -7,6 +7,7 @@ import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.support.response.ApiResponse;
 import com.coffiness.calfit.domain.workspace.invitation.Invitation;
 import com.coffiness.calfit.domain.workspace.invitation.InvitationService;
+import com.coffiness.calfit.domain.workspace.member.MemberService;
 import com.coffiness.calfit.storage.db.core.config.TenantContext;
 import com.coffiness.calfit.support.email.EmailPageService;
 import com.coffiness.calfit.support.email.EmailProperties;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class InvitationController {
   private final InvitationService invitationService;
   private final InvitationFacade invitationFacade;
+  private final MemberService memberService;
   private final EmailProperties emailProperties;
   private final EmailPageService emailPageService;
 
@@ -37,6 +39,7 @@ public class InvitationController {
       @PathVariable String workspaceId,
       @Valid @RequestBody CreateInvitationRequest request,
       @AuthenticationPrincipal SecurityUser securityUser) {
+    memberService.validateHrRole(securityUser.userId());
     Invitation invitation =
         invitationService.createInvitation(
             workspaceId, request.email(), request.memberType(), securityUser.userId());

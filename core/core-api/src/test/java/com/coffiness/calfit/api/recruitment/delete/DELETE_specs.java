@@ -3,6 +3,7 @@ package com.coffiness.calfit.api.recruitment.delete;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.coffiness.calfit.api.CalfitApiTest;
+import com.coffiness.calfit.api.fixture.ApplicationTemplateFixture;
 import com.coffiness.calfit.api.fixture.RecruitmentFixture;
 import com.coffiness.calfit.api.fixture.UserFixture;
 import com.coffiness.calfit.api.fixture.WorkspaceFixture;
@@ -27,7 +28,8 @@ public class DELETE_specs {
   void HR_담당자는_채용_공고를_성공적으로_삭제할_수_있다(
       @Autowired UserFixture userFixture,
       @Autowired WorkspaceFixture workspaceFixture,
-      @Autowired RecruitmentFixture recruitmentFixture) {
+      @Autowired RecruitmentFixture recruitmentFixture,
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
 
     // Arrange
     String token = userFixture.createUserAndGetToken();
@@ -42,11 +44,14 @@ public class DELETE_specs {
             new RecruitmentStageRequest("면접 전형", RecruitmentStageType.INTERVIEW, 2),
             new RecruitmentStageRequest("최종 합격", RecruitmentStageType.PASS, 3));
 
+    Long applicationTemplateId =
+        createApplicationTemplate(token, tenantId, applicationTemplateFixture);
+
     RecruitmentCreateRequest request =
         new RecruitmentCreateRequest(
             "2026년 상반기 백엔드 신입 모집",
             3,
-            1L,
+            applicationTemplateId,
             "구합니다. 개발자",
             now.plusDays(1),
             now.plusDays(4),
@@ -58,7 +63,9 @@ public class DELETE_specs {
             List.of(101L, 102L),
             stages);
 
-    recruitmentFixture.createRecruitment(token, tenantId, request);
+    ApiResponse<Void> createResponse =
+        recruitmentFixture.createRecruitment(token, tenantId, request);
+    assertThat(createResponse.getResult()).isEqualTo(ResultType.SUCCESS);
     Long recruitmentId =
         recruitmentFixture.getRecruitmentList(token, tenantId).getData().get(0).id();
 
@@ -75,7 +82,8 @@ public class DELETE_specs {
       @Autowired UserFixture userFixture,
       @Autowired WorkspaceFixture workspaceFixture,
       @Autowired RecruitmentFixture recruitmentFixture,
-      @Autowired com.coffiness.calfit.api.fixture.MemberFixture memberFixture) {
+      @Autowired com.coffiness.calfit.api.fixture.MemberFixture memberFixture,
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
     // Arrange
     String token = userFixture.createUserAndGetToken();
     WorkspaceResponse workspace = workspaceFixture.createWorkspace(token).getData();
@@ -89,11 +97,14 @@ public class DELETE_specs {
             new RecruitmentStageRequest("면접 전형", RecruitmentStageType.INTERVIEW, 2),
             new RecruitmentStageRequest("최종 합격", RecruitmentStageType.PASS, 3));
 
+    Long applicationTemplateId =
+        createApplicationTemplate(token, tenantId, applicationTemplateFixture);
+
     RecruitmentCreateRequest request =
         new RecruitmentCreateRequest(
             "2026년 상반기 백엔드 신입 모집",
             3,
-            1L,
+            applicationTemplateId,
             "구합니다. 개발자",
             now.plusDays(1),
             now.plusDays(4),
@@ -105,7 +116,9 @@ public class DELETE_specs {
             List.of(101L, 102L),
             stages);
 
-    recruitmentFixture.createRecruitment(token, tenantId, request);
+    ApiResponse<Void> createResponse =
+        recruitmentFixture.createRecruitment(token, tenantId, request);
+    assertThat(createResponse.getResult()).isEqualTo(ResultType.SUCCESS);
     Long recruitmentId =
         recruitmentFixture.getRecruitmentList(token, tenantId).getData().get(0).id();
 
@@ -140,7 +153,8 @@ public class DELETE_specs {
   void 이미_삭제된_공고를_삭제하려고_하면_실패한다(
       @Autowired UserFixture userFixture,
       @Autowired WorkspaceFixture workspaceFixture,
-      @Autowired RecruitmentFixture recruitmentFixture) {
+      @Autowired RecruitmentFixture recruitmentFixture,
+      @Autowired ApplicationTemplateFixture applicationTemplateFixture) {
     // Arrange
     String token = userFixture.createUserAndGetToken();
     WorkspaceResponse workspace = workspaceFixture.createWorkspace(token).getData();
@@ -154,11 +168,14 @@ public class DELETE_specs {
             new RecruitmentStageRequest("면접 전형", RecruitmentStageType.INTERVIEW, 2),
             new RecruitmentStageRequest("최종 합격", RecruitmentStageType.PASS, 3));
 
+    Long applicationTemplateId =
+        createApplicationTemplate(token, tenantId, applicationTemplateFixture);
+
     RecruitmentCreateRequest request =
         new RecruitmentCreateRequest(
             "2026년 상반기 백엔드 신입 모집",
             3,
-            1L,
+            applicationTemplateId,
             "구합니다. 개발자",
             now.plusDays(1),
             now.plusDays(4),
@@ -170,7 +187,9 @@ public class DELETE_specs {
             List.of(101L, 102L),
             stages);
 
-    recruitmentFixture.createRecruitment(token, tenantId, request);
+    ApiResponse<Void> createResponse =
+        recruitmentFixture.createRecruitment(token, tenantId, request);
+    assertThat(createResponse.getResult()).isEqualTo(ResultType.SUCCESS);
     Long recruitmentId =
         recruitmentFixture.getRecruitmentList(token, tenantId).getData().get(0).id();
 
@@ -185,4 +204,9 @@ public class DELETE_specs {
   }
 
   // TODO : 진행중인 공고 삭제 불가능
+
+  private Long createApplicationTemplate(
+      String token, String tenantId, ApplicationTemplateFixture applicationTemplateFixture) {
+    return applicationTemplateFixture.createUsedTemplateId(token, tenantId, "recruitment-delete");
+  }
 }

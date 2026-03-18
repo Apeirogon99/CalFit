@@ -30,6 +30,7 @@ public class ScheduleGoogleSyncEventHandler {
   private final GoogleCalendarPort googleCalendarPort;
   private final ScheduleReader scheduleReader;
   private final ScheduleStore scheduleStore;
+  private final ZoneId appZoneId;
 
   private final ConcurrentMap<Long, ReentrantLock> scheduleLocks = new ConcurrentHashMap<>();
 
@@ -186,7 +187,7 @@ public class ScheduleGoogleSyncEventHandler {
 
   // LocalDateTime을 ZonedDateTime으로 변환
   private ZonedDateTime toZonedDateTime(java.time.LocalDateTime time) {
-    return time.atZone(ZoneId.systemDefault());
+    return time.atZone(appZoneId);
   }
 
   // 문자열이 null 또는 공백인지 확인

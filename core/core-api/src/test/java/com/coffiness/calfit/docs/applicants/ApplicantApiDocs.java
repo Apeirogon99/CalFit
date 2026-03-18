@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 
-public class ApplicantApiDocs extends RestDocsTest {
+class ApplicantApiDocsTest extends RestDocsTest {
 
   private final ApplicantPortalService applicantPortalService = mock(ApplicantPortalService.class);
   private final WorkspaceRepository workspaceRepository = mock(WorkspaceRepository.class);

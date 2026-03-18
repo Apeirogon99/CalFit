@@ -16,11 +16,16 @@ public record ApplicationDetailResponse(
     LocalDateTime birthDate,
     String phone,
     String email,
+    String shortBio,
     String formFields,
+    List<ApplicationAnswerResponse> answers,
     List<ApplicationFileResponse> files) {
 
   public static ApplicationDetailResponse from(
-      ApplicationEntity entity, List<ApplicationFileResponse> files) {
+      ApplicationEntity entity,
+      String shortBio,
+      List<ApplicationAnswerResponse> answers,
+      List<ApplicationFileResponse> files) {
     return new ApplicationDetailResponse(
         entity.getId(),
         entity.getApplicantId(),
@@ -32,7 +37,9 @@ public record ApplicationDetailResponse(
         entity.getBirthDate(),
         entity.getPhone(),
         entity.getEmail(),
+        shortBio,
         entity.getFormFields(),
+        answers,
         files);
   }
 }

@@ -16,7 +16,6 @@ import com.coffiness.calfit.api.fixture.UserFixture;
 import com.coffiness.calfit.api.fixture.WorkspaceFixture;
 import com.coffiness.calfit.api.v1.response.InvitationResponse;
 import com.coffiness.calfit.api.v1.response.NotificationResponse;
-import com.coffiness.calfit.api.v1.response.UserResponse;
 import com.coffiness.calfit.api.v1.response.WorkspaceResponse;
 import com.coffiness.calfit.core.enums.MemberType;
 import com.coffiness.calfit.core.enums.NotificationType;
@@ -272,12 +271,23 @@ public class POST_specs {
   void 중복된_참석자_ID가_전달되면_한_번만_저장한다(
       @Autowired UserFixture userFixture,
       @Autowired WorkspaceFixture workspaceFixture,
-      @Autowired CalendarFixture calendarFixture) {
+      @Autowired CalendarFixture calendarFixture,
+      @Autowired MemberFixture memberFixture) {
 
     String token = userFixture.createUserAndGetToken();
     WorkspaceResponse workspace = workspaceFixture.createWorkspace(token).getData();
     String tenantId = workspace.workspaceId();
-    UserResponse me = userFixture.me(token).getData();
+
+    String attendeeEmail = userFixture.randomEmail();
+    String attendeePassword = userFixture.randomPassword();
+    userFixture.signUp(attendeeEmail, attendeePassword, userFixture.randomName());
+
+    ApiResponse<InvitationResponse> invitationResponse =
+        memberFixture.createInvitation(token, tenantId, attendeeEmail, MemberType.INTERVIEWER);
+    String attendeeToken =
+        userFixture.login(attendeeEmail, attendeePassword).getData().accessToken();
+    memberFixture.acceptInvitation(invitationResponse.getData().token(), attendeeToken);
+    Long attendeeUserId = userFixture.me(attendeeToken).getData().id();
 
     LocalDateTime now = LocalDateTime.now();
     ScheduleCreateRequest createRequest =
@@ -290,7 +300,7 @@ public class POST_specs {
             false,
             null,
             false,
-            List.of(me.id(), me.id(), me.id()));
+            List.of(attendeeUserId, attendeeUserId, attendeeUserId));
 
     ApiResponse<Void> response = calendarFixture.createSchedule(token, tenantId, createRequest);
     assertThat(response.getResult()).isEqualTo(ResultType.SUCCESS);
@@ -303,7 +313,7 @@ public class POST_specs {
     var detailInfo = calendarFixture.getDetailSchedule(token, tenantId, scheduleId).getData();
 
     assertThat(detailInfo).isNotNull();
-    assertThat(detailInfo.attendeeIds()).containsExactly(me.id());
+    assertThat(detailInfo.attendeeIds()).containsExactly(attendeeUserId);
   }
 
   @Test
